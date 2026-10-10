@@ -1,11 +1,13 @@
 /*
  * GIS 3D 지도 - 지도 도구 모드 관리, 거리/면적 측정, 좌표 조회
  *
- * 모드: select(건물 선택, 기본) / distance(거리 측정) / area(면적 측정) / coord(좌표 조회)
+ * 모드: select(건물 선택, 기본) / distance(거리 측정) / area(면적 측정) / coord(좌표 조회) / radius(반경 분석)
+ * - 반경 분석 동작과 화면은 map-analysis.js가 담당하고, 이 파일은 모드 전환만 관리한다.
  * - 한 번에 하나의 모드만 활성화하고, 변경 시 'gis:modechange' 이벤트를 발생시킨다.
  * - 측정은 VWorld 기본 기능(vw.MeasureLine / vw.MeasureArea)을 사용하고 결과는 VWorld 라벨로 표시한다.
  *   start(): 그리기 시작, clear(): 진행 중인 그리기 취소(+stop), 완료: 마우스 오른쪽 버튼.
  * - 결과 초기화는 vw.Map.clear()를 사용한다. (지도에 그린 객체 전체를 지운다)
+ *   반경 분석 도형도 함께 지워지므로 초기화 후 gis:measurereset 이벤트를 발생시켜 복구하게 한다.
  * - 좌표 조회는 vw.Map.onClick 콜백의 cartographic(라디안)을 WGS84 경위도로 변환한다.
  */
 (function () {
@@ -31,11 +33,17 @@
 			guide: '지도를 클릭하면 해당 지점의 좌표를 표시합니다.',
 			touchGuide: '지도를 탭하면 해당 지점의 좌표를 표시합니다.',
 			notice: 'WGS84 경위도(EPSG:4326) 기준입니다.'
+		},
+		radius: {
+			title: '반경 분석',
+			guide: '지도를 클릭해 중심점을 고르고 반경을 정한 뒤 "분석 실행"을 누르세요.',
+			touchGuide: '지도를 탭해 중심점을 고르고 반경을 정한 뒤 "분석 실행"을 누르세요.',
+			notice: '지형을 반영하지 않은 수평 거리 기준입니다. 결과는 VWorld 도로명주소 건물(LT_C_SPBD) 데이터 기준입니다.'
 		}
 	};
 
 	var el = {
-		buttons: document.querySelectorAll('#map-tools [data-mode]'),
+		buttons: document.querySelectorAll('#map-tools [data-mode], #analysis-menu [data-mode]'),
 		reset: document.getElementById('measure-reset'),
 		hint: document.getElementById('map-tools-hint'),
 		mapEl: document.getElementById('map'),
@@ -145,6 +153,7 @@
 				setMessage('측정 결과를 초기화하지 못했습니다.');
 				return;
 			}
+			document.dispatchEvent(new CustomEvent('gis:measurereset'));
 		}
 		setMessage('측정 결과를 초기화했습니다.');
 		if (MEASURE_MODES[mode]) {
@@ -287,6 +296,8 @@
 			var buttonMode = button.getAttribute('data-mode');
 			var available = buttonMode === 'select'
 				|| (buttonMode === 'coord' && clickSupported)
+				|| (buttonMode === 'radius' && clickSupported && !!window.gisAnalysisRenderer
+					&& window.gisAnalysisRenderer.isSupported())
 				|| (MEASURE_MODES[buttonMode] && !!measureApi(buttonMode));
 			button.disabled = !available;
 		});

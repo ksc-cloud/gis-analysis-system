@@ -82,9 +82,10 @@
 
 		<nav class="panel-section" aria-labelledby="analysis-title">
 			<h2 class="panel-section__title" id="analysis-title">GIS 분석</h2>
-			<ul class="menu" id="analysis-menu">
-				<li><span class="menu__item" aria-disabled="true">반경 분석 <em class="badge">준비 중</em></span></li>
-			</ul>
+			<div class="map-tools" id="analysis-menu" role="group" aria-label="GIS 분석 모드">
+				<button type="button" class="map-tools__button" data-mode="radius" aria-pressed="false" disabled>반경 분석</button>
+			</div>
+			<p class="panel-hint" id="analysis-hint">지도에서 중심점을 고르면 반경 안의 건물을 조회합니다.</p>
 		</nav>
 	</aside>
 
@@ -102,6 +103,27 @@
 			<div class="tool-bar__coord" id="coord-result" hidden>
 				<output class="tool-bar__coord-text" id="coord-text"></output>
 				<button type="button" class="tool-bar__button" id="coord-copy">복사</button>
+			</div>
+			<%-- 반경 분석 모드에서만 표시 (map-analysis.js) --%>
+			<div class="radius-controls" id="radius-controls" hidden>
+				<p class="radius-controls__center" id="radius-center">중심점: 선택되지 않음</p>
+				<div class="radius-controls__options" role="group" aria-label="분석 반경">
+					<button type="button" class="tool-bar__button" data-radius="100" aria-pressed="false">100m</button>
+					<button type="button" class="tool-bar__button" data-radius="500" aria-pressed="true">500m</button>
+					<button type="button" class="tool-bar__button" data-radius="1000" aria-pressed="false">1km</button>
+					<label class="radius-controls__custom">
+						<span class="visually-hidden">직접 입력 (50~1000m)</span>
+						<input type="number" id="radius-custom" min="50" max="1000" step="1" inputmode="numeric"
+							   placeholder="직접 입력(m)">
+					</label>
+					<button type="button" class="tool-bar__button" id="radius-custom-apply">적용</button>
+				</div>
+				<p class="radius-controls__summary" id="radius-summary" role="status" aria-live="polite"></p>
+				<div class="tool-bar__actions">
+					<button type="button" class="tool-bar__button tool-bar__button--primary" id="radius-run" disabled>분석 실행</button>
+					<button type="button" class="tool-bar__button" id="radius-reset" disabled>분석 초기화</button>
+					<button type="button" class="tool-bar__button" id="radius-open-results" hidden>결과 보기</button>
+				</div>
 			</div>
 			<p class="tool-bar__message" id="tool-bar-message" role="status" aria-live="polite"></p>
 			<div class="tool-bar__actions">
@@ -143,8 +165,15 @@
 		</div>
 	</main>
 
-	<aside class="info-panel panel" id="info-panel" aria-label="건물 정보">
-		<section class="panel-section building" id="building-section" data-state="empty" aria-labelledby="building-title">
+	<aside class="info-panel panel" id="info-panel" aria-label="건물 정보 및 분석 결과">
+		<div class="info-tabs" id="info-tabs" role="tablist" aria-label="정보 패널">
+			<button type="button" class="info-tabs__tab" id="tab-building" role="tab" aria-selected="true"
+					aria-controls="building-section">건물 정보</button>
+			<button type="button" class="info-tabs__tab" id="tab-analysis" role="tab" aria-selected="false"
+					aria-controls="analysis-section" tabindex="-1">반경 분석</button>
+		</div>
+		<section class="panel-section building" id="building-section" data-state="empty" role="tabpanel"
+				 aria-labelledby="building-title">
 			<div class="building__header">
 				<h2 class="panel-section__title" id="building-title">건물 정보</h2>
 				<button type="button" class="building__clear" id="building-clear" hidden>선택 해제</button>
@@ -173,6 +202,44 @@
 				3D 모델과 정확히 일치하지 않을 수 있으며, 3D 모델 ID와 건물관리번호는 서로 다른 식별자입니다.
 			</p>
 		</section>
+
+		<section class="panel-section analysis" id="analysis-section" data-state="empty" role="tabpanel"
+				 aria-labelledby="analysis-title" hidden>
+			<div class="building__header">
+				<h2 class="panel-section__title" id="analysis-title">반경 분석</h2>
+				<button type="button" class="building__clear" id="analysis-clear" hidden>분석 초기화</button>
+			</div>
+			<p class="empty-state" id="analysis-empty">
+				분석 결과가 없습니다.<br>
+				"반경 분석" 모드에서 중심점을 고르고 분석을 실행하세요.
+			</p>
+			<p class="analysis__status" id="analysis-status" role="status" aria-live="polite" hidden></p>
+			<div class="analysis__result" id="analysis-result" hidden>
+				<dl class="info-list">
+					<div class="info-list__row"><dt>중심점</dt><dd id="analysis-center">-</dd></div>
+					<div class="info-list__row"><dt>분석 반경</dt><dd id="analysis-radius">-</dd></div>
+					<div class="info-list__row"><dt>판정 기준</dt><dd id="analysis-criterion">-</dd></div>
+					<div class="info-list__row"><dt>조회된 건물</dt><dd id="analysis-count">-</dd></div>
+					<div class="info-list__row"><dt>완전 포함</dt><dd id="analysis-inside">-</dd></div>
+					<div class="info-list__row"><dt>경계 걸침</dt><dd id="analysis-partial">-</dd></div>
+					<div class="info-list__row"><dt>VWorld 조회</dt><dd id="analysis-fetched">-</dd></div>
+				</dl>
+				<div class="analysis__completeness" id="analysis-completeness"></div>
+				<h3 class="analysis__subtitle">지상층수 분포</h3>
+				<ul class="analysis__floors" id="analysis-floors"></ul>
+				<p class="panel-hint" id="analysis-floors-note"></p>
+				<h3 class="analysis__subtitle">건물 목록 <span class="analysis__subtitle-note">(가까운 순)</span></h3>
+				<p class="panel-hint" id="analysis-map-note"></p>
+				<ol class="analysis__list" id="analysis-list"></ol>
+				<button type="button" class="building-status__retry" id="analysis-more" hidden>더 보기</button>
+				<p class="panel-hint" id="analysis-notice">
+					거리는 중심점에서 건물 다각형까지의 최단 수평거리이며 지형을 반영한 실제 이동 거리가 아닙니다.
+					건물 다각형의 내부 구멍은 판정에는 반영하지만 지도에는 표시하지 못합니다.
+					3D 건물에 가려 바닥 도형이 잘 보이지 않으면 레이어에서 "3D 건물"을 끄세요.
+				</p>
+				<p class="panel-hint" id="analysis-source"></p>
+			</div>
+		</section>
 	</aside>
 
 	<div class="overlay" id="panel-overlay" hidden></div>
@@ -189,6 +256,9 @@
 	<%-- 지도 준비 이벤트(gis:mapready)를 놓치지 않도록 vworld-map.js보다 먼저 로드한다. --%>
 	<script src="${pageContext.request.contextPath}/js/building-info.js"
 			data-api-url="${pageContext.request.contextPath}/api/buildings/at"></script>
+	<script src="${pageContext.request.contextPath}/js/map-analysis-renderer.js"></script>
+	<script src="${pageContext.request.contextPath}/js/map-analysis.js"
+			data-api-url="${pageContext.request.contextPath}/api/buildings/nearby"></script>
 	<script src="${pageContext.request.contextPath}/js/map-tools.js"></script>
 	<script src="${pageContext.request.contextPath}/js/map-layers.js"></script>
 	<script src="${pageContext.request.contextPath}/js/vworld-map.js"></script>

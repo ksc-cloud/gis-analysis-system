@@ -42,6 +42,8 @@ class HomeControllerVWorldTests {
 		int jquery = body.indexOf("https://code.jquery.com/jquery-3.7.1.min.js");
 		int loader = body.indexOf("https://map.vworld.kr/js/webglMapInit.js.do");
 		int buildingScript = body.indexOf("/js/building-info.js");
+		int rendererScript = body.indexOf("/js/map-analysis-renderer.js");
+		int analysisScript = body.indexOf("/js/map-analysis.js");
 		int toolsScript = body.indexOf("/js/map-tools.js");
 		int layersScript = body.indexOf("/js/map-layers.js");
 		int mapScript = body.indexOf("/js/vworld-map.js");
@@ -50,10 +52,14 @@ class HomeControllerVWorldTests {
 		// building-info.js must be loaded before vworld-map.js so it does not miss the gis:mapready event.
 		assertThat(buildingScript).isGreaterThan(loader);
 		// All modules listening for gis:mapready must be loaded before vworld-map.js.
-		assertThat(toolsScript).isGreaterThan(buildingScript);
+		assertThat(rendererScript).isGreaterThan(buildingScript);
+		// map-tools.js checks window.gisAnalysisRenderer when enabling the radius mode button.
+		assertThat(analysisScript).isGreaterThan(rendererScript);
+		assertThat(toolsScript).isGreaterThan(analysisScript);
 		assertThat(layersScript).isGreaterThan(toolsScript);
 		assertThat(mapScript).isGreaterThan(layersScript);
-		assertThat(body).contains("data-api-url=\"/api/buildings/at\"");
+		assertThat(body).contains("data-api-url=\"/api/buildings/at\"")
+			.contains("data-api-url=\"/api/buildings/nearby\"");
 	}
 
 	@Test
@@ -77,7 +83,17 @@ class HomeControllerVWorldTests {
 			.doesNotContain("거리 측정 <em class=\"badge\">준비 중</em>")
 			.doesNotContain("면적 측정 <em class=\"badge\">준비 중</em>")
 			.doesNotContain("레이어 관리 <em class=\"badge\">준비 중</em>")
-			.contains("반경 분석 <em class=\"badge\">준비 중</em>");
+			.doesNotContain("반경 분석 <em class=\"badge\">준비 중</em>")
+			.contains("data-mode=\"radius\" aria-pressed=\"false\" disabled")
+			.contains("id=\"radius-controls\"")
+			.contains("data-radius=\"100\"")
+			.contains("data-radius=\"500\"")
+			.contains("data-radius=\"1000\"")
+			.contains("id=\"radius-custom\"")
+			.contains("id=\"tab-building\"")
+			.contains("id=\"tab-analysis\"")
+			.contains("id=\"analysis-section\"")
+			.contains("id=\"radius-open-results\"");
 	}
 
 }

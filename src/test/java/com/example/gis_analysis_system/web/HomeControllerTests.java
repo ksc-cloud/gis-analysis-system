@@ -110,7 +110,8 @@ class HomeControllerTests {
 
 	@Test
 	void mapToolScriptsAreServed() throws Exception {
-		for (String path : new String[] { "/js/map-tools.js", "/js/map-layers.js" }) {
+		for (String path : new String[] { "/js/map-tools.js", "/js/map-layers.js", "/js/map-analysis.js",
+				"/js/map-analysis-renderer.js" }) {
 			HttpResponse<String> response = get(path);
 			assertThat(response.statusCode()).isEqualTo(200);
 			assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
@@ -118,6 +119,8 @@ class HomeControllerTests {
 		}
 		assertThat(get("/js/map-tools.js").body()).contains("vw.MeasureLine").contains("gis:modechange");
 		assertThat(get("/js/map-layers.js").body()).contains("facility_build").contains("gis:layerchange");
+		assertThat(get("/js/map-analysis.js").body()).contains("gis:measurereset").contains("AbortController");
+		assertThat(get("/js/map-analysis-renderer.js").body()).contains("vw.geom.CircleZ").contains("removeObject");
 	}
 
 	@Test

@@ -63,6 +63,23 @@ class VWorldApiKeyLiveTests {
 		System.out.println("[vworld-live] LT_C_SPBD at Seoul City Hall: " + result);
 	}
 
+	/**
+	 * Confirms that the real POINT + buffer response (geometry=true) can be parsed into footprints.
+	 */
+	@Test
+	void radiusQueryResponseCanBeParsed() {
+		VWorldBuildingClient client = new VWorldBuildingClient(JsonMapper.builder().build(),
+				System.getenv("VWORLD_API_KEY"), System.getenv().getOrDefault("VWORLD_DOMAIN", "http://localhost:8080"));
+
+		VWorldBuildingClient.FeaturePage page = client.findBuildingsWithin(126.97797, 37.56650, 100, 1);
+
+		assertThat(page.reportedTotal()).isPositive();
+		assertThat(page.currentPage()).isEqualTo(1);
+		assertThat(page.features()).isNotEmpty().allSatisfy((feature) -> assertThat(feature.hasGeometry()).isTrue());
+		System.out.println("[vworld-live] LT_C_SPBD within 100 m: total " + page.reportedTotal() + ", pages "
+				+ page.totalPages());
+	}
+
 	private String loadLoader(String apiKey) throws Exception {
 		String serviceUrl = System.getenv().getOrDefault("VWORLD_SERVICE_URL", "http://localhost:8080/");
 		HttpRequest request = HttpRequest
