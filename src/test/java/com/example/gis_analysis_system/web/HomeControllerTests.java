@@ -90,7 +90,12 @@ class HomeControllerTests {
 			.doesNotContain("map.vworld.kr")
 			.doesNotContain("jquery")
 			.doesNotContain("vworld-map.js")
-			.doesNotContain("building-info.js");
+			.doesNotContain("building-info.js")
+			.doesNotContain("map-tools.js")
+			.doesNotContain("map-layers.js")
+			// Without a key the map never becomes ready, so the tools stay disabled.
+			.contains("data-mode=\"distance\" aria-pressed=\"false\" disabled")
+			.contains("data-layer=\"facility_build\" checked disabled");
 	}
 
 	@Test
@@ -101,6 +106,18 @@ class HomeControllerTests {
 		assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
 				(contentType) -> assertThat(contentType).contains("javascript"));
 		assertThat(response.body()).contains("ws3dInitCallBack");
+	}
+
+	@Test
+	void mapToolScriptsAreServed() throws Exception {
+		for (String path : new String[] { "/js/map-tools.js", "/js/map-layers.js" }) {
+			HttpResponse<String> response = get(path);
+			assertThat(response.statusCode()).isEqualTo(200);
+			assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
+					(contentType) -> assertThat(contentType).contains("javascript"));
+		}
+		assertThat(get("/js/map-tools.js").body()).contains("vw.MeasureLine").contains("gis:modechange");
+		assertThat(get("/js/map-layers.js").body()).contains("facility_build").contains("gis:layerchange");
 	}
 
 	@Test

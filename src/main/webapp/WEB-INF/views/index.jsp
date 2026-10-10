@@ -58,20 +58,31 @@
 			<p class="panel-hint" id="quick-move-hint">지도가 표시되면 사용할 수 있습니다.</p>
 		</section>
 
-		<nav class="panel-section" aria-labelledby="menu-title">
-			<h2 class="panel-section__title" id="menu-title">주요 기능</h2>
-			<ul class="menu" id="main-menu">
-				<li><span class="menu__item menu__item--active" aria-current="page">지도 보기</span></li>
-				<li><span class="menu__item" aria-disabled="true">레이어 관리 <em class="badge">준비 중</em></span></li>
-				<li><span class="menu__item" aria-disabled="true">건물 정보 조회 <em class="badge">준비 중</em></span></li>
+		<section class="panel-section" aria-labelledby="tools-title">
+			<h2 class="panel-section__title" id="tools-title">지도 도구</h2>
+			<div class="map-tools" id="map-tools" role="group" aria-label="지도 도구 모드">
+				<button type="button" class="map-tools__button" data-mode="select" aria-pressed="true" disabled>건물 선택</button>
+				<button type="button" class="map-tools__button" data-mode="distance" aria-pressed="false" disabled>거리 측정</button>
+				<button type="button" class="map-tools__button" data-mode="area" aria-pressed="false" disabled>면적 측정</button>
+				<button type="button" class="map-tools__button" data-mode="coord" aria-pressed="false" disabled>좌표 조회</button>
+			</div>
+			<button type="button" class="map-tools__reset" id="measure-reset" disabled>측정 결과 초기화</button>
+			<p class="panel-hint" id="map-tools-hint">지도가 표시되면 사용할 수 있습니다.</p>
+		</section>
+
+		<section class="panel-section" aria-labelledby="layers-title">
+			<h2 class="panel-section__title" id="layers-title">레이어</h2>
+			<ul class="layer-list" id="layer-list">
+				<li><label class="layer-list__item"><input type="checkbox" data-layer="facility_build" checked disabled> 3D 건물</label></li>
+				<li><label class="layer-list__item"><input type="checkbox" data-layer="poi_base" checked disabled> 지명</label></li>
+				<li><label class="layer-list__item"><input type="checkbox" data-layer="hybrid_bound" checked disabled> 행정경계</label></li>
 			</ul>
-		</nav>
+			<p class="panel-hint" id="layer-hint">지도가 표시되면 사용할 수 있습니다.</p>
+		</section>
 
 		<nav class="panel-section" aria-labelledby="analysis-title">
 			<h2 class="panel-section__title" id="analysis-title">GIS 분석</h2>
 			<ul class="menu" id="analysis-menu">
-				<li><span class="menu__item" aria-disabled="true">거리 측정 <em class="badge">준비 중</em></span></li>
-				<li><span class="menu__item" aria-disabled="true">면적 측정 <em class="badge">준비 중</em></span></li>
 				<li><span class="menu__item" aria-disabled="true">반경 분석 <em class="badge">준비 중</em></span></li>
 			</ul>
 		</nav>
@@ -80,6 +91,27 @@
 	<main class="map-area" id="map-area">
 		<%-- VWorld 3D 지도 컨테이너. VWorld 뷰어가 이 요소 안에 생성된다. --%>
 		<div id="map" class="map-container"></div>
+
+		<%-- 거리/면적 측정, 좌표 조회 모드에서만 표시하는 지도 상단 도구 안내바 --%>
+		<div class="tool-bar" id="tool-bar" data-mode="select" hidden>
+			<div class="tool-bar__head">
+				<strong class="tool-bar__title" id="tool-bar-title"></strong>
+				<span class="tool-bar__guide" id="tool-bar-guide"></span>
+			</div>
+			<p class="tool-bar__notice" id="tool-bar-notice"></p>
+			<div class="tool-bar__coord" id="coord-result" hidden>
+				<output class="tool-bar__coord-text" id="coord-text"></output>
+				<button type="button" class="tool-bar__button" id="coord-copy">복사</button>
+			</div>
+			<p class="tool-bar__message" id="tool-bar-message" role="status" aria-live="polite"></p>
+			<div class="tool-bar__actions">
+				<button type="button" class="tool-bar__button" id="tool-complete" hidden>완료 (실험적)</button>
+				<button type="button" class="tool-bar__button" id="tool-restart" hidden>새 측정</button>
+				<button type="button" class="tool-bar__button" id="tool-cancel" hidden>그리기 취소</button>
+				<button type="button" class="tool-bar__button" id="tool-reset" hidden>결과 초기화</button>
+				<button type="button" class="tool-bar__button tool-bar__button--primary" id="tool-exit">건물 선택으로</button>
+			</div>
+		</div>
 
 		<%-- 작은 화면에서 건물을 선택했을 때 표시하는 안내바 (정보 패널은 자동으로 열지 않는다) --%>
 		<div class="selection-bar" id="selection-bar" hidden>
@@ -157,6 +189,8 @@
 	<%-- 지도 준비 이벤트(gis:mapready)를 놓치지 않도록 vworld-map.js보다 먼저 로드한다. --%>
 	<script src="${pageContext.request.contextPath}/js/building-info.js"
 			data-api-url="${pageContext.request.contextPath}/api/buildings/at"></script>
+	<script src="${pageContext.request.contextPath}/js/map-tools.js"></script>
+	<script src="${pageContext.request.contextPath}/js/map-layers.js"></script>
 	<script src="${pageContext.request.contextPath}/js/vworld-map.js"></script>
 </c:if>
 </body>

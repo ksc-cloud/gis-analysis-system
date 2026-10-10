@@ -82,11 +82,12 @@
 		}
 	}
 
-	function enableHighlight() {
+	// 건물 선택 모드가 아닐 때는 끈다. 끄면 엔진이 클릭 때 강조를 바꾸지 않으므로 기존 선택 강조는 유지된다.
+	function enableHighlight(enabled) {
 		var wsMap = engineMap();
 		try {
 			if (wsMap && wsMap.isFeatureSilhouetteSupported === true && 'featureSilhouetteEnabled' in wsMap) {
-				wsMap.featureSilhouetteEnabled = true;
+				wsMap.featureSilhouetteEnabled = enabled !== false;
 			}
 		} catch (e) {
 			console.warn('[GIS 3D 지도] 건물 강조 표시를 사용할 수 없습니다.', e);
@@ -328,7 +329,16 @@
 		clearHighlight();
 	}
 
+	// map-tools.js 가 없으면 항상 건물 선택 모드로 동작한다.
+	function isSelectMode() {
+		return !window.gisTools || window.gisTools.getMode() === 'select';
+	}
+
 	function onMapClick(windowPosition, ecefPosition, cartographic, picked) {
+		// 거리/면적 측정, 좌표 조회 중에는 건물 선택과 정보 패널을 변경하지 않는다.
+		if (!isSelectMode()) {
+			return;
+		}
 		if (!isBuilding(picked)) {
 			// 지형, 지명 라벨 등 건물이 아닌 곳을 클릭하면 선택을 해제한다.
 			if (picked) {
@@ -353,8 +363,22 @@
 		}
 		map.onClick.addEventListener(onMapClick);
 		registered = true;
-		enableHighlight();
+		enableHighlight(isSelectMode());
 	}
+
+	document.addEventListener('gis:modechange', function (event) {
+		if (registered) {
+			enableHighlight(event.detail && event.detail.mode === 'select');
+		}
+	});
+
+	// 3D 건물 레이어를 숨기면 보이지 않는 건물이 선택된 상태로 남지 않도록 선택을 해제한다.
+	document.addEventListener('gis:layerchange', function (event) {
+		var detail = event.detail || {};
+		if (detail.id === 'facility_build' && detail.visible === false && selected) {
+			clearSelection();
+		}
+	});
 
 	el.clear.addEventListener('click', clearSelection);
 	el.retry.addEventListener('click', function () {

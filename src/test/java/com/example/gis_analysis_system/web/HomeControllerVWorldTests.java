@@ -42,13 +42,42 @@ class HomeControllerVWorldTests {
 		int jquery = body.indexOf("https://code.jquery.com/jquery-3.7.1.min.js");
 		int loader = body.indexOf("https://map.vworld.kr/js/webglMapInit.js.do");
 		int buildingScript = body.indexOf("/js/building-info.js");
+		int toolsScript = body.indexOf("/js/map-tools.js");
+		int layersScript = body.indexOf("/js/map-layers.js");
 		int mapScript = body.indexOf("/js/vworld-map.js");
 		assertThat(jquery).isPositive();
 		assertThat(loader).isGreaterThan(jquery);
 		// building-info.js must be loaded before vworld-map.js so it does not miss the gis:mapready event.
 		assertThat(buildingScript).isGreaterThan(loader);
-		assertThat(mapScript).isGreaterThan(buildingScript);
+		// All modules listening for gis:mapready must be loaded before vworld-map.js.
+		assertThat(toolsScript).isGreaterThan(buildingScript);
+		assertThat(layersScript).isGreaterThan(toolsScript);
+		assertThat(mapScript).isGreaterThan(layersScript);
 		assertThat(body).contains("data-api-url=\"/api/buildings/at\"");
+	}
+
+	@Test
+	void homeRendersMapToolsAndLayers() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		assertThat(body)
+			.contains("data-mode=\"select\" aria-pressed=\"true\"")
+			.contains("data-mode=\"distance\"")
+			.contains("data-mode=\"area\"")
+			.contains("data-mode=\"coord\"")
+			.contains("id=\"measure-reset\"")
+			.contains("id=\"tool-bar\"")
+			.contains("id=\"coord-copy\"")
+			.contains("id=\"tool-complete\"")
+			.contains("data-layer=\"facility_build\"")
+			.contains("data-layer=\"poi_base\"")
+			.contains("data-layer=\"hybrid_bound\"")
+			// Features implemented in this stage are no longer listed as "준비 중".
+			.doesNotContain("거리 측정 <em class=\"badge\">준비 중</em>")
+			.doesNotContain("면적 측정 <em class=\"badge\">준비 중</em>")
+			.doesNotContain("레이어 관리 <em class=\"badge\">준비 중</em>")
+			.contains("반경 분석 <em class=\"badge\">준비 중</em>");
 	}
 
 }

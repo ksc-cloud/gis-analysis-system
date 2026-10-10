@@ -566,6 +566,178 @@ body {
 	display: none;
 }
 
+/* ---------- 지도 도구 ---------- */
+
+.map-tools {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+.map-tools__button,
+.map-tools__reset {
+	height: 34px;
+	padding: 0 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	color: var(--color-text);
+	font: inherit;
+	cursor: pointer;
+	transition: background var(--transition), border-color var(--transition);
+}
+
+.map-tools__button:hover:not(:disabled),
+.map-tools__reset:hover:not(:disabled) {
+	border-color: var(--color-accent);
+	color: var(--color-accent);
+}
+
+.map-tools__button.is-active {
+	border-color: var(--color-accent);
+	background: var(--color-accent);
+	color: #ffffff;
+	font-weight: 600;
+}
+
+.map-tools__reset {
+	width: 100%;
+	margin-top: 8px;
+}
+
+.map-tools__button:disabled,
+.map-tools__reset:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+.layer-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.layer-list__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 2px;
+	cursor: pointer;
+}
+
+.layer-list__item input:disabled {
+	cursor: not-allowed;
+}
+
+.layer-list__unavailable {
+	color: var(--color-text-muted);
+	font-size: 12px;
+	font-style: normal;
+}
+
+/* 지도 상단 도구 안내바: 오른쪽의 VWorld 지도 조작 버튼과 겹치지 않도록 왼쪽에 배치한다. */
+.tool-bar {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	z-index: 6;
+	width: min(560px, calc(100% - 96px));
+	padding: 10px 12px;
+	border: 1px solid var(--color-border);
+	border-left: 3px solid var(--color-accent);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
+	font-size: 13px;
+}
+
+.tool-bar[hidden],
+.tool-bar__coord[hidden],
+.tool-bar__button[hidden] {
+	display: none;
+}
+
+.tool-bar__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 4px 10px;
+}
+
+.tool-bar__title {
+	font-size: 14px;
+}
+
+.tool-bar__guide {
+	color: var(--color-text-muted);
+}
+
+.tool-bar__notice {
+	margin: 6px 0 0;
+	color: var(--color-text-muted);
+	font-size: 12px;
+}
+
+.tool-bar__coord {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.tool-bar__coord-text {
+	flex: 1;
+	min-width: 0;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+	user-select: all;
+}
+
+.tool-bar__message {
+	margin: 6px 0 0;
+	font-size: 12px;
+}
+
+.tool-bar__message:empty {
+	display: none;
+}
+
+.tool-bar__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.tool-bar__button {
+	height: 28px;
+	padding: 0 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	color: var(--color-text);
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.tool-bar__button:hover {
+	border-color: var(--color-accent);
+	color: var(--color-accent);
+}
+
+.tool-bar__button--primary {
+	margin-left: auto;
+	border-color: var(--color-accent);
+	background: var(--color-accent);
+	color: #ffffff;
+}
+
+.tool-bar__button--primary:hover {
+	color: #ffffff;
+	opacity: 0.9;
+}
+
 /* ---------- 반응형 ---------- */
 
 @media (max-width: 1200px) {
@@ -686,6 +858,26 @@ body {
 		border: 1px solid var(--color-border);
 		background: var(--color-panel-bg);
 		color: var(--color-text);
+	}
+
+	/* 작은 화면에서는 안내바를 좁게 하고 보조 안내 문구를 줄여 지도를 덜 가린다. */
+	.tool-bar {
+		top: 8px;
+		left: 8px;
+		width: calc(100% - 72px);
+		padding: 8px 10px;
+	}
+
+	.tool-bar__guide {
+		width: 100%;
+		font-size: 12px;
+	}
+
+	.tool-bar__notice {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 }
 

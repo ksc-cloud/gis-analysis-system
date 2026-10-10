@@ -130,8 +130,17 @@
 		syncState();
 	}
 
+	// 작은 화면에서 열린 슬라이드 패널을 닫는다. (지도 도구 선택 시 지도를 가리지 않도록 사용)
+	function closePanels() {
+		if (isMobile()) {
+			closeMobilePanels();
+			syncState();
+		}
+	}
+
 	window.gisLayout = {
 		openPanel: openPanel,
+		closePanels: closePanels,
 		isMobile: isMobile
 	};
 
