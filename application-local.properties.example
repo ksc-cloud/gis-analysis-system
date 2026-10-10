@@ -1,0 +1,6 @@
+# Copy this file to application-local.properties (git-ignored) and enter your VWorld API key.
+# The VWORLD_API_KEY environment variable can be used instead.
+# Never put a real key in this example file.
+vworld.api-key=
+# Service URL registered when the key was issued (default: http://localhost:8080).
+# vworld.domain=http://localhost:8080

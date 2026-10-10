@@ -1,0 +1,725 @@
+/* GIS 3D 지도 - 기본 레이아웃 */
+
+:root {
+	--header-height: 60px;
+	--sidebar-width: 280px;
+	--info-panel-width: 320px;
+	--map-min-height: 360px;
+
+	--color-header-bg: #14213d;
+	--color-header-text: #ffffff;
+	--color-header-muted: #a9b4cc;
+	--color-accent: #2f80ed;
+	--color-accent-soft: #e8f1fd;
+	--color-warning: #e8a317;
+	--color-bg: #eef1f5;
+	--color-panel-bg: #ffffff;
+	--color-border: #d9dee7;
+	--color-text: #1f2937;
+	--color-text-muted: #6b7280;
+	--color-map-bg: #dfe6ee;
+
+	--radius: 6px;
+	--transition: 0.25s ease;
+	--font-family: "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	height: 100%;
+}
+
+body {
+	font-family: var(--font-family);
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--color-text);
+	background: var(--color-bg);
+	overflow: hidden;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	border: 0;
+}
+
+/* ---------- 전체 그리드 ---------- */
+
+.app {
+	display: grid;
+	grid-template-columns: var(--sidebar-width) minmax(0, 1fr) var(--info-panel-width);
+	grid-template-rows: var(--header-height) minmax(0, 1fr);
+	grid-template-areas:
+		"header  header header"
+		"sidebar map    info";
+	height: 100vh;
+	height: 100dvh;
+}
+
+.app.is-sidebar-collapsed {
+	grid-template-columns: 0 minmax(0, 1fr) var(--info-panel-width);
+}
+
+.app.is-info-collapsed {
+	grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 0;
+}
+
+.app.is-sidebar-collapsed.is-info-collapsed {
+	grid-template-columns: 0 minmax(0, 1fr) 0;
+}
+
+.app.is-sidebar-collapsed .sidebar,
+.app.is-info-collapsed .info-panel {
+	display: none;
+}
+
+/* ---------- 헤더 ---------- */
+
+.app-header {
+	grid-area: header;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 0 16px;
+	background: var(--color-header-bg);
+	color: var(--color-header-text);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+	z-index: 30;
+}
+
+.app-header__brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.app-header__logo {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 34px;
+	height: 34px;
+	border-radius: var(--radius);
+	background: var(--color-accent);
+	font-weight: 700;
+	font-size: 13px;
+}
+
+.app-header__titles {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.app-header__title {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.app-header__subtitle {
+	font-size: 12px;
+	color: var(--color-header-muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.app-header__actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-left: auto;
+	min-width: 0;
+}
+
+.status-badge {
+	margin: 0;
+	padding: 4px 10px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+	color: var(--color-header-muted);
+	font-size: 12px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.panel-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex: none;
+	height: 34px;
+	padding: 0 10px;
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	border-radius: var(--radius);
+	background: transparent;
+	color: var(--color-header-text);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+	transition: background var(--transition);
+}
+
+.panel-toggle:hover {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.panel-toggle:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
+
+.panel-toggle[aria-expanded="true"] {
+	background: rgba(255, 255, 255, 0.16);
+}
+
+.panel-toggle__icon {
+	font-size: 16px;
+	line-height: 1;
+}
+
+/* ---------- 공통 패널 ---------- */
+
+.panel {
+	min-height: 0;
+	overflow-y: auto;
+	background: var(--color-panel-bg);
+}
+
+.panel-section {
+	padding: 16px;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.panel-section__title {
+	margin: 0 0 12px;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--color-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.panel-hint {
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: var(--color-text-muted);
+}
+
+.badge {
+	margin-left: auto;
+	padding: 1px 6px;
+	border-radius: 4px;
+	background: var(--color-bg);
+	color: var(--color-text-muted);
+	font-size: 11px;
+	font-style: normal;
+	white-space: nowrap;
+}
+
+/* ---------- 왼쪽 사이드바 ---------- */
+
+.sidebar {
+	grid-area: sidebar;
+	border-right: 1px solid var(--color-border);
+}
+
+.search-form {
+	display: flex;
+	gap: 6px;
+}
+
+.search-form__input {
+	flex: 1;
+	min-width: 0;
+	height: 36px;
+	padding: 0 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	font: inherit;
+	background: #f8fafc;
+}
+
+.search-form__button {
+	flex: none;
+	height: 36px;
+	padding: 0 14px;
+	border: none;
+	border-radius: var(--radius);
+	background: var(--color-accent);
+	color: #ffffff;
+	font: inherit;
+	cursor: pointer;
+}
+
+.search-form__input:disabled,
+.search-form__button:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.menu {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.menu__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 10px;
+	border-radius: var(--radius);
+	color: var(--color-text);
+}
+
+.menu__item--active {
+	background: var(--color-accent-soft);
+	color: var(--color-accent);
+	font-weight: 600;
+}
+
+.menu__item[aria-disabled="true"] {
+	color: var(--color-text-muted);
+	cursor: not-allowed;
+}
+
+/* ---------- 중앙 지도 영역 ---------- */
+
+.map-area {
+	grid-area: map;
+	position: relative;
+	/* VWorld 내부 요소의 z-index가 슬라이드 패널 위로 올라오지 않도록 쌓임 맥락을 분리한다. */
+	isolation: isolate;
+	min-width: 0;
+	min-height: 0;
+	background: var(--color-map-bg);
+}
+
+/* VWorld 3D 지도가 그려질 컨테이너: 부모 영역 전체를 채우도록 너비/높이를 명시한다. */
+#map {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+/* 지도 상태 안내(로딩/키 없음/오류). 지도 위에 겹쳐 표시하고, 지도가 준비되면 숨긴다. */
+.map-status {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	background-color: var(--color-map-bg);
+	background-image:
+		linear-gradient(rgba(20, 33, 61, 0.06) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(20, 33, 61, 0.06) 1px, transparent 1px);
+	background-size: 40px 40px;
+}
+
+.map-status[hidden] {
+	display: none;
+}
+
+.map-status__box {
+	max-width: 440px;
+	padding: 24px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+	text-align: center;
+	color: var(--color-text-muted);
+}
+
+.map-status[data-state="error"] .map-status__box,
+.map-status[data-state="no-key"] .map-status__box {
+	border-top: 3px solid var(--color-warning);
+}
+
+.map-status__icon {
+	font-size: 40px;
+	line-height: 1;
+}
+
+.map-status__title {
+	margin: 12px 0 6px;
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--color-text);
+}
+
+.map-status__text {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+.map-status code {
+	padding: 1px 4px;
+	border-radius: 4px;
+	background: var(--color-bg);
+	font-size: 12px;
+}
+
+.quick-move {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+.quick-move__button {
+	height: 34px;
+	padding: 0 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	color: var(--color-text);
+	font: inherit;
+	cursor: pointer;
+	transition: background var(--transition), border-color var(--transition);
+}
+
+.quick-move__button:hover:not(:disabled) {
+	border-color: var(--color-accent);
+	background: var(--color-accent-soft);
+	color: var(--color-accent);
+}
+
+.quick-move__button:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+/* ---------- 오른쪽 정보 패널 ---------- */
+
+.info-panel {
+	grid-area: info;
+	border-left: 1px solid var(--color-border);
+}
+
+.empty-state {
+	margin: 0 0 16px;
+	padding: 14px;
+	border: 1px dashed var(--color-border);
+	border-radius: var(--radius);
+	background: #f8fafc;
+	color: var(--color-text-muted);
+	text-align: center;
+	font-size: 13px;
+}
+
+.info-list {
+	margin: 0;
+}
+
+.info-list__row {
+	display: grid;
+	grid-template-columns: 80px minmax(0, 1fr);
+	gap: 8px;
+	padding: 9px 0;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.info-list__row:last-child {
+	border-bottom: none;
+}
+
+.info-list dt {
+	color: var(--color-text-muted);
+}
+
+.info-list dd {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+/* ---------- 건물 선택 ---------- */
+
+.building__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.building__header .panel-section__title {
+	margin: 0;
+}
+
+.building__clear,
+.building-status__retry {
+	height: 28px;
+	padding: 0 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	color: var(--color-text);
+	font: inherit;
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.building__clear:hover,
+.building-status__retry:hover {
+	border-color: var(--color-accent);
+	color: var(--color-accent);
+}
+
+.building__clear[hidden],
+.building-status[hidden],
+.building-status__retry[hidden],
+.building-status__candidates[hidden],
+.building__notice[hidden] {
+	display: none;
+}
+
+.building[data-state="found"] .info-list,
+.building[data-state="loading"] .info-list,
+.building[data-state="no-info"] .info-list,
+.building[data-state="ambiguous"] .info-list,
+.building[data-state="error"] .info-list {
+	border-left: 3px solid var(--color-accent);
+	padding-left: 10px;
+}
+
+.building-status {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	border-radius: var(--radius);
+	background: var(--color-accent-soft);
+	color: var(--color-text);
+	font-size: 13px;
+}
+
+.building[data-state="error"] .building-status,
+.building[data-state="ambiguous"] .building-status,
+.building[data-state="no-info"] .building-status {
+	background: #fff7e6;
+	border: 1px solid #f3d9a4;
+}
+
+.building-status__text {
+	margin: 0;
+}
+
+.building-status__candidates {
+	margin: 8px 0 0;
+	padding-left: 18px;
+	font-size: 12px;
+}
+
+.building-status__retry {
+	margin-top: 8px;
+}
+
+.building__notice {
+	margin-top: 12px;
+}
+
+/* 정보 버튼의 선택 표시 점 */
+.panel-toggle {
+	position: relative;
+}
+
+.panel-toggle.has-selection::after {
+	content: "";
+	position: absolute;
+	top: 4px;
+	right: 4px;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--color-warning);
+	box-shadow: 0 0 0 2px var(--color-header-bg);
+}
+
+/* 지도 하단 선택 안내바: 작은 화면에서만 표시 */
+.selection-bar {
+	display: none;
+}
+
+.overlay {
+	display: none;
+}
+
+/* ---------- 반응형 ---------- */
+
+@media (max-width: 1200px) {
+	:root {
+		--sidebar-width: 240px;
+		--info-panel-width: 280px;
+	}
+}
+
+/* 작은 화면: 지도를 전체 폭으로, 사이드바/정보 패널은 슬라이드 패널로 전환 */
+@media (max-width: 900px) {
+	/* 화면 높이가 낮아도 지도 최소 높이를 보장하고, 부족하면 페이지 스크롤을 허용한다. */
+	body {
+		overflow: auto;
+	}
+
+	.app,
+	.app.is-sidebar-collapsed,
+	.app.is-info-collapsed,
+	.app.is-sidebar-collapsed.is-info-collapsed {
+		height: auto;
+		min-height: 100vh;
+		min-height: 100dvh;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: var(--header-height) minmax(var(--map-min-height), 1fr);
+		grid-template-areas:
+			"header"
+			"map";
+	}
+
+	.app-header {
+		position: sticky;
+		top: 0;
+	}
+
+	.sidebar,
+	.info-panel,
+	.app.is-sidebar-collapsed .sidebar,
+	.app.is-info-collapsed .info-panel {
+		display: block;
+		position: fixed;
+		top: var(--header-height);
+		bottom: 0;
+		width: min(85vw, 320px);
+		z-index: 20;
+		box-shadow: 0 0 16px rgba(0, 0, 0, 0.2);
+		visibility: hidden;
+		transition: transform var(--transition), visibility var(--transition);
+	}
+
+	.sidebar {
+		left: 0;
+		transform: translateX(-100%);
+	}
+
+	.info-panel {
+		right: 0;
+		transform: translateX(100%);
+	}
+
+	.app.is-sidebar-open .sidebar,
+	.app.is-info-open .info-panel {
+		transform: translateX(0);
+		visibility: visible;
+	}
+
+	.overlay {
+		display: block;
+		position: fixed;
+		inset: var(--header-height) 0 0 0;
+		z-index: 10;
+		background: rgba(15, 23, 42, 0.4);
+	}
+
+	.overlay[hidden] {
+		display: none;
+	}
+
+	.selection-bar:not([hidden]) {
+		position: absolute;
+		left: 12px;
+		right: 12px;
+		bottom: 12px;
+		z-index: 6;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 10px;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		background: var(--color-panel-bg);
+		box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
+	}
+
+	.selection-bar__text {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-weight: 600;
+	}
+
+	.selection-bar__button {
+		flex: none;
+		height: 30px;
+		padding: 0 10px;
+		border: none;
+		border-radius: var(--radius);
+		background: var(--color-accent);
+		color: #ffffff;
+		font: inherit;
+		font-size: 13px;
+		cursor: pointer;
+	}
+
+	.selection-bar__button--ghost {
+		border: 1px solid var(--color-border);
+		background: var(--color-panel-bg);
+		color: var(--color-text);
+	}
+}
+
+@media (max-width: 600px) {
+	:root {
+		--header-height: 56px;
+		--map-min-height: 280px;
+	}
+
+	.app-header {
+		gap: 8px;
+		padding: 0 10px;
+	}
+
+	.app-header__title {
+		font-size: 17px;
+	}
+
+	.app-header__logo,
+	.app-header__subtitle,
+	.status-badge,
+	.panel-toggle__label {
+		display: none;
+	}
+
+	.panel-toggle {
+		padding: 0 9px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sidebar,
+	.info-panel,
+	.panel-toggle {
+		transition: none;
+	}
+}
