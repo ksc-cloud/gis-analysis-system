@@ -977,6 +977,418 @@ body {
 	margin-top: 8px;
 }
 
+/* ---------- 분석 결과 저장 / 저장된 분석 표시 (7단계) ---------- */
+
+.analysis__kind {
+	display: inline-block;
+	margin: 0 0 10px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.analysis__kind[hidden],
+.analysis__saved-banner[hidden],
+.analysis-save[hidden],
+.analysis-save__status[hidden],
+.saved-bar[hidden],
+.history[hidden],
+.history__status[hidden],
+.history__pager[hidden],
+.history .empty-state[hidden],
+.history .building-status__retry[hidden] {
+	display: none;
+}
+
+.analysis__kind--live {
+	background: var(--color-accent-soft);
+	color: #1d4ed8;
+}
+
+.analysis__kind--saved {
+	background: #f3e8ff;
+	color: #6d28d9;
+}
+
+.analysis__saved-banner {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	border-left: 3px solid #7c3aed;
+	border-radius: var(--radius);
+	background: #f5f3ff;
+	font-size: 12px;
+}
+
+.analysis__saved-label {
+	margin: 0 0 2px;
+	color: #6d28d9;
+	font-weight: 700;
+}
+
+.analysis__saved-title {
+	margin: 0 0 4px;
+	font-size: 14px;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.analysis__saved-meta {
+	margin: 0 0 8px;
+	color: var(--color-text-muted);
+}
+
+.analysis__saved-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+/* 저장본 표시 중에는 결과 패널의 관계 배지도 저장본 색상(보라/분홍)으로 맞춘다. */
+.analysis[data-source="saved"] .analysis__badge--inside {
+	background: #7c3aed;
+}
+
+.analysis[data-source="saved"] .analysis__badge--partial {
+	background: #db2777;
+}
+
+.analysis[data-source="saved"] .analysis__completeness {
+	border-left-color: #7c3aed;
+	background: #faf5ff;
+}
+
+.analysis-save {
+	margin: 0 0 12px;
+	padding: 10px 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: #f8fafc;
+}
+
+.analysis-save .analysis__subtitle {
+	margin-top: 0;
+}
+
+.analysis-save__label {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 4px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.analysis-save__count {
+	color: var(--color-text-muted);
+	font-weight: normal;
+}
+
+.analysis-save__count.is-over {
+	color: #b42318;
+	font-weight: 600;
+}
+
+.analysis-save__row {
+	display: flex;
+	gap: 6px;
+}
+
+.analysis-save__input {
+	flex: 1;
+	min-width: 0;
+	height: 32px;
+	padding: 0 8px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	font: inherit;
+	font-size: 13px;
+}
+
+.analysis-save__input:disabled {
+	background: #f1f5f9;
+	color: var(--color-text-muted);
+}
+
+.analysis-save__row .tool-bar__button {
+	height: 32px;
+	margin-left: 0;
+	white-space: nowrap;
+}
+
+.analysis-save__status {
+	margin: 8px 0 0;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.analysis-save__status.is-success {
+	color: #067647;
+}
+
+.analysis-save__status.is-error {
+	color: #b42318;
+}
+
+/* 지도 위 저장본 표시 막대: 실시간 결과와 구분되도록 저장본일 때만 보인다. */
+.saved-bar:not([hidden]) {
+	position: absolute;
+	left: 50%;
+	bottom: 16px;
+	z-index: 6;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	max-width: min(560px, calc(100% - 24px));
+	padding: 8px 10px;
+	border: 1px solid #c4b5fd;
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	box-shadow: 0 2px 10px rgba(15, 23, 42, 0.18);
+	transform: translateX(-50%);
+}
+
+.saved-bar__badge {
+	flex: none;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #7c3aed;
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.saved-bar__title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-weight: 600;
+}
+
+.saved-bar__button {
+	flex: none;
+	height: 30px;
+	padding: 0 10px;
+	border: none;
+	border-radius: var(--radius);
+	background: #7c3aed;
+	color: #ffffff;
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.saved-bar__button--ghost {
+	border: 1px solid var(--color-border);
+	background: var(--color-panel-bg);
+	color: var(--color-text);
+}
+
+/* ---------- 분석 이력 ---------- */
+
+.history__toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 10px;
+	font-size: 12px;
+}
+
+.history__sort {
+	height: 30px;
+	padding: 0 6px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+	font: inherit;
+	font-size: 12px;
+}
+
+.history__total {
+	margin-left: auto;
+	color: var(--color-text-muted);
+}
+
+.history__status {
+	margin: 0 0 10px;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.history__status.is-error {
+	color: #b42318;
+}
+
+.history .building-status__retry {
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+.history__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.history__item {
+	padding: 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: var(--color-panel-bg);
+}
+
+.history__item + .history__item {
+	margin-top: 8px;
+}
+
+.history__item.is-current {
+	border-color: #7c3aed;
+	background: #faf5ff;
+}
+
+.history__item.is-highlight {
+	border-color: var(--color-accent);
+	box-shadow: 0 0 0 2px var(--color-accent-soft);
+}
+
+.history__item-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+}
+
+.history__item-title {
+	flex: 1 1 100%;
+	font-size: 14px;
+	overflow-wrap: anywhere;
+}
+
+.history__badge {
+	padding: 1px 6px;
+	border-radius: 999px;
+	font-size: 11px;
+}
+
+.history__badge--complete {
+	background: #ecfdf3;
+	color: #067647;
+}
+
+.history__badge--partial {
+	background: #fffaeb;
+	color: #b54708;
+}
+
+.history__badge--shown {
+	background: #7c3aed;
+	color: #ffffff;
+}
+
+.history__item-meta {
+	margin: 6px 0 8px;
+	color: var(--color-text-muted);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.history__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.history__actions .tool-bar__button {
+	flex: 1;
+	margin-left: 0;
+}
+
+.history__confirm {
+	flex: 1 1 100%;
+	margin: 0;
+	color: #b42318;
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.history__danger {
+	border-color: #d92d20;
+	background: #d92d20;
+	color: #ffffff;
+}
+
+.history__danger:hover {
+	color: #ffffff;
+	opacity: 0.9;
+}
+
+.history__pager {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-top: 10px;
+}
+
+.history__page {
+	font-size: 12px;
+	color: var(--color-text-muted);
+}
+
+.history__pager .tool-bar__button {
+	margin-left: 0;
+}
+
+/* 작은 화면: 터치하기 쉬운 크기, 저장 폼은 세로 배치, 지도 위 막대는 선택 안내바와 겹치지 않게 */
+@media (max-width: 900px) {
+	.saved-bar:not([hidden]) {
+		left: 12px;
+		right: 12px;
+		bottom: 12px;
+		max-width: none;
+		transform: none;
+	}
+
+	.selection-bar:not([hidden]) ~ .saved-bar:not([hidden]) {
+		bottom: 64px;
+	}
+
+	.analysis-save__row {
+		flex-direction: column;
+	}
+
+	.analysis-save__input,
+	.analysis-save__row .tool-bar__button,
+	.analysis__saved-actions .tool-bar__button,
+	.history__actions .tool-bar__button,
+	.history__pager .tool-bar__button,
+	.history__sort,
+	.saved-bar__button {
+		min-height: 44px;
+	}
+
+	.analysis__saved-actions .tool-bar__button {
+		flex: 1;
+	}
+
+	.info-tabs__tab {
+		height: 44px;
+		white-space: nowrap;
+	}
+}
+
+@media (max-width: 600px) {
+	.saved-bar__badge {
+		display: none;
+	}
+
+	.info-tabs__tab {
+		font-size: 12px;
+	}
+}
+
 /* ---------- 반응형 ---------- */
 
 @media (max-width: 1200px) {

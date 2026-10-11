@@ -13,22 +13,31 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.example.gis_analysis_system.analysis.RadiusAnalysisResult;
 import com.example.gis_analysis_system.analysis.RadiusAnalysisService;
+import com.example.gis_analysis_system.history.AnalysisSnapshot;
+import com.example.gis_analysis_system.history.AnalysisSnapshotStore;
 import com.example.gis_analysis_system.vworld.BuildingFeature;
 import com.example.gis_analysis_system.vworld.BuildingInfo;
 import com.example.gis_analysis_system.vworld.BuildingLookupResult;
 import com.example.gis_analysis_system.vworld.VWorldApiException;
 import com.example.gis_analysis_system.vworld.VWorldBuildingClient;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
+
 @WebMvcTest(BuildingApiController.class)
+@Import(AnalysisSnapshotStore.class)
 class BuildingApiControllerTests {
 
 	private static final BuildingInfo CITY_HALL = new BuildingInfo("1114010300100310000000001", "서울특별시청", null,
@@ -42,6 +51,12 @@ class BuildingApiControllerTests {
 
 	@MockitoBean
 	private RadiusAnalysisService radiusAnalysisService;
+
+	@Autowired
+	private AnalysisSnapshotStore snapshotStore;
+
+	@Autowired
+	private JsonMapper jsonMapper;
 
 	@Test
 	void returnsFoundBuilding() throws Exception {
@@ -129,6 +144,34 @@ class BuildingApiControllerTests {
 			.andExpect(jsonPath("$.buildings[0].polygons[0][0][0][0]").isNumber())
 			.andExpect(jsonPath("$.floorStatistics.withData").value(1))
 			.andExpect(jsonPath("$.source.layer").value("LT_C_SPBD (도로명주소 건물)"));
+	}
+
+	/** Stage 6 clients keep working: the result fields are unchanged and only the save token fields are added. */
+	@Test
+	void nearbyAddsTheSaveTokenWithoutChangingTheResultFields() throws Exception {
+		RadiusAnalysisResult analysis = sampleAnalysis(true);
+		given(this.radiusAnalysisService.analyze(126.978, 37.5665, 500)).willReturn(analysis);
+
+		String body = this.mockMvc
+			.perform(get("/api/buildings/nearby").param("lon", "126.978").param("lat", "37.5665").param("radius", "500"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.analysisToken").isString())
+			.andExpect(jsonPath("$.analyzedAt").isString())
+			.andExpect(jsonPath("$.snapshotExpiresAt").isString())
+			.andReturn()
+			.getResponse()
+			.getContentAsString();
+
+		ObjectNode response = (ObjectNode) this.jsonMapper.readTree(body);
+		UUID token = UUID.fromString(response.get("analysisToken").asString());
+		AnalysisSnapshot snapshot = this.snapshotStore.find(token).orElseThrow();
+		assertThat(snapshot.result()).isSameAs(analysis);
+		assertThat(response.get("analyzedAt").asString()).isEqualTo(snapshot.analyzedAt().toString());
+		assertThat(response.get("snapshotExpiresAt").asString()).isEqualTo(snapshot.expiresAt().toString());
+
+		response.remove(List.of("analysisToken", "analyzedAt", "snapshotExpiresAt"));
+		JsonNode stage6 = this.jsonMapper.valueToTree(analysis);
+		assertThat(response).isEqualTo(stage6);
 	}
 
 	@Test

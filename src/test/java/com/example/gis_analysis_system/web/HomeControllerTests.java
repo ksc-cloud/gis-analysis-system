@@ -124,6 +124,17 @@ class HomeControllerTests {
 	}
 
 	@Test
+	void historyScriptIsServedButNotLoadedWithoutApiKey() throws Exception {
+		HttpResponse<String> response = get("/js/map-history.js");
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
+				(contentType) -> assertThat(contentType).contains("javascript"));
+		assertThat(response.body()).contains("gis:analysisresult").contains("/api/analyses").contains("textContent");
+		assertThat(get("/").body()).doesNotContain("map-history.js").contains("id=\"tab-history\"");
+	}
+
+	@Test
 	void jspIsNotDirectlyAccessible() throws Exception {
 		assertThat(get("/WEB-INF/views/index.jsp").statusCode()).isEqualTo(404);
 	}

@@ -63,6 +63,33 @@ class HomeControllerVWorldTests {
 	}
 
 	@Test
+	void homeLoadsTheHistoryScriptAfterTheAnalysisScript() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		int analysisScript = body.indexOf("/js/map-analysis.js");
+		int historyScript = body.indexOf("/js/map-history.js");
+		int toolsScript = body.indexOf("/js/map-tools.js");
+		// map-history.js uses window.gisAnalysis, and must not miss the first gis:analysisresult event.
+		assertThat(historyScript).isGreaterThan(analysisScript);
+		assertThat(toolsScript).isGreaterThan(historyScript);
+		assertThat(body).contains("data-api-url=\"/api/analyses\"")
+			.contains("id=\"tab-history\"")
+			.contains("aria-controls=\"history-section\"")
+			.contains("id=\"history-section\"")
+			.contains("id=\"history-list\"")
+			.contains("id=\"history-sort\"")
+			.contains("value=\"BUILDINGS_DESC\"")
+			.contains("id=\"history-pager\"")
+			.contains("id=\"analysis-save\"")
+			.contains("id=\"analysis-save-title\"")
+			.contains("id=\"analysis-save-button\"")
+			.contains("id=\"analysis-kind\"")
+			.contains("id=\"analysis-saved-banner\"")
+			.contains("id=\"saved-analysis-bar\"");
+	}
+
+	@Test
 	void homeRendersMapToolsAndLayers() throws Exception {
 		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
 		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();

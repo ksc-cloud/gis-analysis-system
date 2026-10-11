@@ -4,3 +4,8 @@
 vworld.api-key=
 # Service URL registered when the key was issued (default: http://localhost:8080).
 # vworld.domain=http://localhost:8080
+
+# MariaDB password of the development account gis_app (see db/mariadb/01_setup.sql). Never put a real password here.
+# The URL and user default to jdbc:mariadb://127.0.0.1:3306/gis_analysis and gis_app (GIS_DB_URL / GIS_DB_USERNAME).
+# The GIS_DB_PASSWORD environment variable can be used instead.
+spring.datasource.password=

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+	Analysis history (db/mariadb/02_schema.sql). Values are always bound with #{}; no string substitution is used.
+	Rows are mapped to records through explicit constructor arguments.
+-->
+<mapper namespace="com.example.gis_analysis_system.history.AnalysisHistoryMapper">
+
+	<resultMap id="historyRow" type="com.example.gis_analysis_system.history.HistoryRow">
+		<constructor>
+			<arg name="analysisId" column="analysis_id" javaType="java.lang.Long"/>
+			<arg name="snapshotToken" column="snapshot_token" javaType="string"/>
+			<arg name="title" column="title" javaType="string"/>
+			<arg name="centerLon" column="center_lon" javaType="_double"/>
+			<arg name="centerLat" column="center_lat" javaType="_double"/>
+			<arg name="radiusM" column="radius_m" javaType="_int"/>
+			<arg name="criterion" column="criterion" javaType="string"/>
+			<arg name="intersectingCount" column="intersecting_count" javaType="_int"/>
+			<arg name="insideCount" column="inside_count" javaType="_int"/>
+			<arg name="partialCount" column="partial_count" javaType="_int"/>
+			<arg name="outsideExcludedCount" column="outside_excluded_count" javaType="_int"/>
+			<arg name="geometryUnavailableCount" column="geometry_unavailable_count" javaType="_int"/>
+			<arg name="distinctBuildingCount" column="distinct_building_count" javaType="_int"/>
+			<arg name="mergedDuplicateCount" column="merged_duplicate_count" javaType="_int"/>
+			<arg name="reportedTotal" column="reported_total" javaType="java.lang.Integer"/>
+			<arg name="fetchedFeatures" column="fetched_features" javaType="_int"/>
+			<arg name="fetchedPages" column="fetched_pages" javaType="_int"/>
+			<arg name="reportedPages" column="reported_pages" javaType="java.lang.Integer"/>
+			<arg name="complete" column="is_complete" javaType="_boolean"/>
+			<arg name="sourceProvider" column="source_provider" javaType="string"/>
+			<arg name="sourceLayer" column="source_layer" javaType="string"/>
+			<arg name="sourceCrs" column="source_crs" javaType="string"/>
+			<arg name="sourceNotice" column="source_notice" javaType="string"/>
+			<arg name="analyzedAt" column="analyzed_at" javaType="java.time.LocalDateTime"/>
+			<arg name="savedAt" column="saved_at" javaType="java.time.LocalDateTime"/>
+		</constructor>
+	</resultMap>
+
+	<resultMap id="historySummaryRow" type="com.example.gis_analysis_system.history.HistorySummaryRow">
+		<constructor>
+			<arg name="analysisId" column="analysis_id" javaType="_long"/>
+			<arg name="title" column="title" javaType="string"/>
+			<arg name="radiusM" column="radius_m" javaType="_int"/>
+			<arg name="centerLon" column="center_lon" javaType="_double"/>
+			<arg name="centerLat" column="center_lat" javaType="_double"/>
+			<arg name="intersectingCount" column="intersecting_count" javaType="_int"/>
+			<arg name="complete" column="is_complete" javaType="_boolean"/>
+			<arg name="analyzedAt" column="analyzed_at" javaType="java.time.LocalDateTime"/>
+			<arg name="savedAt" column="saved_at" javaType="java.time.LocalDateTime"/>
+		</constructor>
+	</resultMap>
+
+	<resultMap id="reasonRow" type="com.example.gis_analysis_system.history.ReasonRow">
+		<constructor>
+			<arg name="analysisId" column="analysis_id" javaType="_long"/>
+			<arg name="seq" column="seq" javaType="_int"/>
+			<arg name="reasonCode" column="reason_code" javaType="string"/>
+			<arg name="message" column="message" javaType="string"/>
+		</constructor>
+	</resultMap>
+
+	<resultMap id="buildingRow" type="com.example.gis_analysis_system.history.BuildingRow">
+		<constructor>
+			<arg name="analysisId" column="analysis_id" javaType="_long"/>
+			<arg name="seq" column="seq" javaType="_int"/>
+			<arg name="buildingKey" column="building_key" javaType="string"/>
+			<arg name="bdMgtSn" column="bd_mgt_sn" javaType="string"/>
+			<arg name="buildingName" column="building_name" javaType="string"/>
+			<arg name="buildingSubName" column="building_sub_name" javaType="string"/>
+			<arg name="sido" column="sido" javaType="string"/>
+			<arg name="sigungu" column="sigungu" javaType="string"/>
+			<arg name="eupmyeon" column="eupmyeon" javaType="string"/>
+			<arg name="roadName" column="road_name" javaType="string"/>
+			<arg name="buildingNumber" column="building_number" javaType="string"/>
+			<arg name="groundFloorRaw" column="ground_floor_raw" javaType="string"/>
+			<arg name="groundFloorCount" column="ground_floor_count" javaType="java.lang.Integer"/>
+			<arg name="relation" column="relation" javaType="string"/>
+			<arg name="distanceM" column="distance_m" javaType="java.math.BigDecimal"/>
+			<arg name="centerInside" column="center_inside" javaType="_boolean"/>
+			<arg name="hasHoles" column="has_holes" javaType="_boolean"/>
+			<arg name="geometry" column="geometry" javaType="string"/>
+		</constructor>
+	</resultMap>
+
+	<resultMap id="floorStatsRow" type="com.example.gis_analysis_system.history.FloorStatsRow">
+		<constructor>
+			<arg name="withData" column="with_data" javaType="_int"/>
+			<arg name="withoutData" column="without_data" javaType="_int"/>
+			<arg name="minFloor" column="min_floor" javaType="java.lang.Integer"/>
+			<arg name="maxFloor" column="max_floor" javaType="java.lang.Integer"/>
+			<arg name="floorSum" column="floor_sum" javaType="_long"/>
+			<arg name="bucket1To2" column="bucket_1_to_2" javaType="_int"/>
+			<arg name="bucket3To5" column="bucket_3_to_5" javaType="_int"/>
+			<arg name="bucket6To10" column="bucket_6_to_10" javaType="_int"/>
+			<arg name="bucket11To20" column="bucket_11_to_20" javaType="_int"/>
+			<arg name="bucket21Plus" column="bucket_21_plus" javaType="_int"/>
+		</constructor>
+	</resultMap>
+
+	<select id="findIdByToken" resultType="java.lang.Long">
+		SELECT analysis_id FROM gis_analysis_history WHERE snapshot_token = #{snapshotToken}
+	</select>
+
+	<select id="countHistory" resultType="_long">
+		SELECT COUNT(*) FROM gis_analysis_history
+	</select>
+
+	<insert id="insertHistory" useGeneratedKeys="true" keyProperty="analysisId" keyColumn="analysis_id">
+		INSERT INTO gis_analysis_history (
+			snapshot_token, title, center_lon, center_lat, radius_m, criterion,
+			intersecting_count, inside_count, partial_count, outside_excluded_count, geometry_unavailable_count,
+			distinct_building_count, merged_duplicate_count, reported_total, fetched_features, fetched_pages,
+			reported_pages, is_complete, source_provider, source_layer, source_crs, source_notice, analyzed_at, saved_at
+		) VALUES (
+			#{row.snapshotToken}, #{row.title}, #{row.centerLon}, #{row.centerLat}, #{row.radiusM}, #{row.criterion},
+			#{row.intersectingCount}, #{row.insideCount}, #{row.partialCount}, #{row.outsideExcludedCount},
+			#{row.geometryUnavailableCount}, #{row.distinctBuildingCount}, #{row.mergedDuplicateCount},
+			#{row.reportedTotal,jdbcType=INTEGER}, #{row.fetchedFeatures}, #{row.fetchedPages},
+			#{row.reportedPages,jdbcType=INTEGER}, #{row.complete}, #{row.sourceProvider}, #{row.sourceLayer},
+			#{row.sourceCrs}, #{row.sourceNotice}, #{row.analyzedAt}, #{row.savedAt}
+		)
+	</insert>
+
+	<insert id="insertReasons">
+		INSERT INTO gis_analysis_incomplete_reason (analysis_id, seq, reason_code, message) VALUES
+		<foreach collection="reasons" item="r" separator=",">
+			(#{r.analysisId}, #{r.seq}, #{r.reasonCode}, #{r.message})
+		</foreach>
+	</insert>
+
+	<!-- The service calls this with at most 500 rows per statement. -->
+	<insert id="insertBuildings">
+		INSERT INTO gis_analysis_building (
+			analysis_id, seq, building_key, bd_mgt_sn, building_name, building_sub_name, sido, sigungu, eupmyeon,
+			road_name, building_number, ground_floor_raw, ground_floor_count, relation, distance_m, center_inside,
+			has_holes, geometry
+		) VALUES
+		<foreach collection="buildings" item="b" separator=",">
+			(#{b.analysisId}, #{b.seq}, #{b.buildingKey}, #{b.bdMgtSn,jdbcType=VARCHAR},
+			#{b.buildingName,jdbcType=VARCHAR}, #{b.buildingSubName,jdbcType=VARCHAR}, #{b.sido,jdbcType=VARCHAR},
+			#{b.sigungu,jdbcType=VARCHAR}, #{b.eupmyeon,jdbcType=VARCHAR}, #{b.roadName,jdbcType=VARCHAR},
+			#{b.buildingNumber,jdbcType=VARCHAR}, #{b.groundFloorRaw,jdbcType=VARCHAR},
+			#{b.groundFloorCount,jdbcType=SMALLINT}, #{b.relation}, #{b.distanceM}, #{b.centerInside}, #{b.hasHoles},
+			#{b.geometry})
+		</foreach>
+	</insert>
+
+	<!-- The order is chosen from the HistorySort enum; only these fixed clauses can be produced. -->
+	<select id="findPage" resultMap="historySummaryRow">
+		SELECT analysis_id, title, radius_m, center_lon, center_lat, intersecting_count, is_complete, analyzed_at,
+			saved_at
+		FROM gis_analysis_history
+		<choose>
+			<when test="sort.name() == 'SAVED_ASC'">ORDER BY saved_at ASC, analysis_id ASC</when>
+			<when test="sort.name() == 'TITLE_ASC'">ORDER BY title ASC, analysis_id DESC</when>
+			<when test="sort.name() == 'BUILDINGS_DESC'">ORDER BY intersecting_count DESC, saved_at DESC, analysis_id DESC</when>
+			<otherwise>ORDER BY saved_at DESC, analysis_id DESC</otherwise>
+		</choose>
+		LIMIT #{limit} OFFSET #{offset}
+	</select>
+
+	<select id="findHistory" resultMap="historyRow">
+		SELECT analysis_id, snapshot_token, title, center_lon, center_lat, radius_m, criterion,
+			intersecting_count, inside_count, partial_count, outside_excluded_count, geometry_unavailable_count,
+			distinct_building_count, merged_duplicate_count, reported_total, fetched_features, fetched_pages,
+			reported_pages, is_complete, source_provider, source_layer, source_crs, source_notice, analyzed_at, saved_at
+		FROM gis_analysis_history
+		WHERE analysis_id = #{analysisId}
+	</select>
+
+	<select id="findReasons" resultMap="reasonRow">
+		SELECT analysis_id, seq, reason_code, message
+		FROM gis_analysis_incomplete_reason
+		WHERE analysis_id = #{analysisId}
+		ORDER BY seq
+	</select>
+
+	<select id="findBuildings" resultMap="buildingRow">
+		SELECT analysis_id, seq, building_key, bd_mgt_sn, building_name, building_sub_name, sido, sigungu, eupmyeon,
+			road_name, building_number, ground_floor_raw, ground_floor_count, relation, distance_m, center_inside,
+			has_holes, geometry
+		FROM gis_analysis_building
+		WHERE analysis_id = #{analysisId}
+		ORDER BY seq
+	</select>
+
+	<!-- Buckets must match RadiusAnalysisService (1~2, 3~5, 6~10, 11~20, 21+). NULL = no valid floor count. -->
+	<select id="findFloorStats" resultMap="floorStatsRow">
+		SELECT
+			COUNT(ground_floor_count) AS with_data,
+			COUNT(*) - COUNT(ground_floor_count) AS without_data,
+			MIN(ground_floor_count) AS min_floor,
+			MAX(ground_floor_count) AS max_floor,
+			COALESCE(SUM(ground_floor_count), 0) AS floor_sum,
+			COALESCE(SUM(ground_floor_count BETWEEN 1 AND 2), 0) AS bucket_1_to_2,
+			COALESCE(SUM(ground_floor_count BETWEEN 3 AND 5), 0) AS bucket_3_to_5,
+			COALESCE(SUM(ground_floor_count BETWEEN 6 AND 10), 0) AS bucket_6_to_10,
+			COALESCE(SUM(ground_floor_count BETWEEN 11 AND 20), 0) AS bucket_11_to_20,
+			COALESCE(SUM(ground_floor_count &gt;= 21), 0) AS bucket_21_plus
+		FROM gis_analysis_building
+		WHERE analysis_id = #{analysisId}
+	</select>
+
+	<delete id="deleteHistory">
+		DELETE FROM gis_analysis_history WHERE analysis_id = #{analysisId}
+	</delete>
+
+</mapper>

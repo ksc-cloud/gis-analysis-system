@@ -1,5 +1,6 @@
 package com.example.gis_analysis_system.web;
 
+import java.time.Instant;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -12,8 +13,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+
 import com.example.gis_analysis_system.analysis.RadiusAnalysisResult;
 import com.example.gis_analysis_system.analysis.RadiusAnalysisService;
+import com.example.gis_analysis_system.history.AnalysisSnapshot;
+import com.example.gis_analysis_system.history.AnalysisSnapshotStore;
 import com.example.gis_analysis_system.vworld.BuildingInfo;
 import com.example.gis_analysis_system.vworld.BuildingLookupResult;
 import com.example.gis_analysis_system.vworld.VWorldApiException;
@@ -42,9 +47,13 @@ public class BuildingApiController {
 
 	private final RadiusAnalysisService radiusAnalysisService;
 
-	public BuildingApiController(VWorldBuildingClient buildingClient, RadiusAnalysisService radiusAnalysisService) {
+	private final AnalysisSnapshotStore snapshotStore;
+
+	public BuildingApiController(VWorldBuildingClient buildingClient, RadiusAnalysisService radiusAnalysisService,
+			AnalysisSnapshotStore snapshotStore) {
 		this.buildingClient = buildingClient;
 		this.radiusAnalysisService = radiusAnalysisService;
+		this.snapshotStore = snapshotStore;
 	}
 
 	@GetMapping("/at")
@@ -60,6 +69,9 @@ public class BuildingApiController {
 	/**
 	 * Buildings whose footprint intersects the circle. A partial result (complete=false) is still 200;
 	 * only a failure of the first VWorld page is an error response.
+	 * <p>
+	 * The result is also kept in memory for a while; the returned analysisToken lets the client save it to the
+	 * analysis history without sending the buildings back. Works without a database.
 	 */
 	@GetMapping("/nearby")
 	public ResponseEntity<?> findNearby(@RequestParam double lon, @RequestParam double lat,
@@ -72,7 +84,9 @@ public class BuildingApiController {
 			return invalidRadius();
 		}
 		RadiusAnalysisResult result = this.radiusAnalysisService.analyze(lon, lat, radiusMeters);
-		return ResponseEntity.ok(result);
+		AnalysisSnapshot snapshot = this.snapshotStore.put(result);
+		return ResponseEntity.ok(new NearbyAnalysisResponse(result, snapshot.token().toString(), snapshot.analyzedAt(),
+				snapshot.expiresAt()));
 	}
 
 	@ExceptionHandler(MissingServletRequestParameterException.class)
@@ -128,6 +142,17 @@ public class BuildingApiController {
 	}
 
 	record ApiError(String error, String message, String vworldErrorCode) {
+	}
+
+	/**
+	 * The stage 6 result fields unchanged at the top level, plus the token for saving it.
+	 *
+	 * @param analysisToken token for POST /api/analyses
+	 * @param analyzedAt when the analysis finished (UTC)
+	 * @param snapshotExpiresAt after this the result can no longer be saved
+	 */
+	record NearbyAnalysisResponse(@JsonUnwrapped RadiusAnalysisResult result, String analysisToken, Instant analyzedAt,
+			Instant snapshotExpiresAt) {
 	}
 
 }

@@ -142,6 +142,14 @@
 			<button type="button" class="selection-bar__button selection-bar__button--ghost" id="selection-bar-clear">해제</button>
 		</div>
 
+		<%-- 저장된 분석을 지도에 다시 표시하는 동안 보이는 안내 막대 (실시간 결과와 구분) --%>
+		<div class="saved-bar" id="saved-analysis-bar" hidden>
+			<span class="saved-bar__badge">저장된 분석</span>
+			<span class="saved-bar__title" id="saved-analysis-bar-title"></span>
+			<button type="button" class="saved-bar__button" id="saved-analysis-bar-open">결과 보기</button>
+			<button type="button" class="saved-bar__button saved-bar__button--ghost" id="saved-analysis-bar-close">표시 해제</button>
+		</div>
+
 		<div class="map-status" id="map-status" role="status" aria-live="polite"
 			 data-state="${vworldEnabled ? 'loading' : 'no-key'}">
 			<div class="map-status__box">
@@ -171,6 +179,8 @@
 					aria-controls="building-section">건물 정보</button>
 			<button type="button" class="info-tabs__tab" id="tab-analysis" role="tab" aria-selected="false"
 					aria-controls="analysis-section" tabindex="-1">반경 분석</button>
+			<button type="button" class="info-tabs__tab" id="tab-history" role="tab" aria-selected="false"
+					aria-controls="history-section" tabindex="-1">분석 이력</button>
 		</div>
 		<section class="panel-section building" id="building-section" data-state="empty" role="tabpanel"
 				 aria-labelledby="building-title">
@@ -215,6 +225,33 @@
 			</p>
 			<p class="analysis__status" id="analysis-status" role="status" aria-live="polite" hidden></p>
 			<div class="analysis__result" id="analysis-result" hidden>
+				<p class="analysis__kind" id="analysis-kind" hidden></p>
+				<div class="analysis__saved-banner" id="analysis-saved-banner" hidden>
+					<p class="analysis__saved-label">저장된 분석</p>
+					<p class="analysis__saved-title" id="analysis-saved-title"></p>
+					<p class="analysis__saved-meta" id="analysis-saved-meta"></p>
+					<div class="analysis__saved-actions">
+						<button type="button" class="tool-bar__button" id="analysis-saved-rerun">같은 범위로 다시 분석</button>
+						<button type="button" class="tool-bar__button" id="analysis-saved-close">표시 해제</button>
+					</div>
+				</div>
+				<form class="analysis-save" id="analysis-save" novalidate hidden>
+					<h3 class="analysis__subtitle">분석 결과 저장</h3>
+					<label class="analysis-save__label" for="analysis-save-title">
+						제목 <span class="analysis-save__count" id="analysis-save-count">0 / 100</span>
+					</label>
+					<div class="analysis-save__row">
+						<input type="text" id="analysis-save-title" class="analysis-save__input" autocomplete="off"
+							   placeholder="예: 서울시청 반경 500m">
+						<button type="submit" class="tool-bar__button tool-bar__button--primary"
+								id="analysis-save-button">분석 결과 저장</button>
+					</div>
+					<p class="panel-hint" id="analysis-save-hint">
+						분석 후 30분 안에 저장할 수 있습니다. 서버가 다시 시작되면 분석을 다시 실행해야 합니다.
+					</p>
+					<p class="analysis-save__status" id="analysis-save-status" role="status" aria-live="polite" hidden></p>
+					<button type="button" class="building-status__retry" id="analysis-save-open-history" hidden>분석 이력에서 보기</button>
+				</form>
 				<dl class="info-list">
 					<div class="info-list__row"><dt>중심점</dt><dd id="analysis-center">-</dd></div>
 					<div class="info-list__row"><dt>분석 반경</dt><dd id="analysis-radius">-</dd></div>
@@ -240,6 +277,39 @@
 				<p class="panel-hint" id="analysis-source"></p>
 			</div>
 		</section>
+
+		<section class="panel-section history" id="history-section" data-state="idle" role="tabpanel"
+				 aria-labelledby="history-title" hidden>
+			<div class="building__header">
+				<h2 class="panel-section__title" id="history-title">분석 이력</h2>
+				<button type="button" class="building__clear" id="history-refresh">새로 고침</button>
+			</div>
+			<div class="history__toolbar">
+				<label class="history__sort-label" for="history-sort">정렬</label>
+				<select id="history-sort" class="history__sort">
+					<option value="SAVED_DESC">최근 저장순</option>
+					<option value="SAVED_ASC">오래된 저장순</option>
+					<option value="TITLE_ASC">제목순</option>
+					<option value="BUILDINGS_DESC">건물 많은 순</option>
+				</select>
+				<span class="history__total" id="history-total"></span>
+			</div>
+			<p class="history__status" id="history-status" role="status" aria-live="polite" hidden></p>
+			<button type="button" class="building-status__retry" id="history-retry" hidden>다시 시도</button>
+			<p class="empty-state" id="history-empty" hidden>
+				저장된 분석 이력이 없습니다.<br>
+				반경 분석 결과에서 "분석 결과 저장"을 누르세요.
+			</p>
+			<ul class="history__list" id="history-list"></ul>
+			<nav class="history__pager" id="history-pager" aria-label="분석 이력 페이지" hidden>
+				<button type="button" class="tool-bar__button" id="history-prev">이전</button>
+				<span class="history__page" id="history-page"></span>
+				<button type="button" class="tool-bar__button" id="history-next">다음</button>
+			</nav>
+			<p class="panel-hint" id="history-notice">
+				저장된 분석은 저장 시점의 VWorld 데이터입니다. "지도에서 보기"는 VWorld를 다시 조회하지 않습니다.
+			</p>
+		</section>
 	</aside>
 
 	<div class="overlay" id="panel-overlay" hidden></div>
@@ -259,6 +329,9 @@
 	<script src="${pageContext.request.contextPath}/js/map-analysis-renderer.js"></script>
 	<script src="${pageContext.request.contextPath}/js/map-analysis.js"
 			data-api-url="${pageContext.request.contextPath}/api/buildings/nearby"></script>
+	<%-- 분석 결과 저장, 분석 이력(목록/다시 보기/삭제): /api/analyses 통신 담당 --%>
+	<script src="${pageContext.request.contextPath}/js/map-history.js"
+			data-api-url="${pageContext.request.contextPath}/api/analyses"></script>
 	<script src="${pageContext.request.contextPath}/js/map-tools.js"></script>
 	<script src="${pageContext.request.contextPath}/js/map-layers.js"></script>
 	<script src="${pageContext.request.contextPath}/js/vworld-map.js"></script>

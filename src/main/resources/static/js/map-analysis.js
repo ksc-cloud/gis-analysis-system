@@ -8,6 +8,9 @@
  * - 완료된 결과는 모드를 바꿔도 유지하고, 새 중심점/반경 변경/분석 초기화 때만 지운다.
  * - 오른쪽 패널에 "건물 정보 / 반경 분석" 탭을 두어 서로의 내용을 덮어쓰지 않는다.
  * - 3D 모델 ID(TD_ID)와 건물관리번호는 서로 다른 식별자이므로 연결하지 않는다.
+ * - 같은 결과 화면으로 저장된 분석(GET /api/analyses/{id}의 result)도 보여 준다. (7단계, showSaved)
+ *   저장본은 보라/분홍 도형, "저장된 분석" 문구와 안내 띠, 지도 위 표시 막대로 실시간 결과와 구분한다.
+ * - 결과가 바뀔 때마다 'gis:analysisresult' 이벤트를 보낸다. (저장/이력 API 통신은 map-history.js 담당)
  */
 (function () {
 	'use strict';
@@ -35,7 +38,19 @@
 		message: document.getElementById('tool-bar-message'),
 		tabBuilding: document.getElementById('tab-building'),
 		tabAnalysis: document.getElementById('tab-analysis'),
+		tabHistory: document.getElementById('tab-history'),
 		buildingSection: document.getElementById('building-section'),
+		historySection: document.getElementById('history-section'),
+		kind: document.getElementById('analysis-kind'),
+		savedBanner: document.getElementById('analysis-saved-banner'),
+		savedTitle: document.getElementById('analysis-saved-title'),
+		savedMeta: document.getElementById('analysis-saved-meta'),
+		savedRerun: document.getElementById('analysis-saved-rerun'),
+		savedClose: document.getElementById('analysis-saved-close'),
+		savedBar: document.getElementById('saved-analysis-bar'),
+		savedBarTitle: document.getElementById('saved-analysis-bar-title'),
+		savedBarOpen: document.getElementById('saved-analysis-bar-open'),
+		savedBarClose: document.getElementById('saved-analysis-bar-close'),
 		section: document.getElementById('analysis-section'),
 		empty: document.getElementById('analysis-empty'),
 		status: document.getElementById('analysis-status'),
@@ -72,7 +87,10 @@
 		result: null,
 		drawnIds: {},
 		shown: 0,
-		selectedId: null
+		selectedId: null,
+		source: null, // null | 'live' | 'saved'
+		saved: null, // 저장본일 때 { analysisId, title, analyzedAt, savedAt }
+		generation: 0 // 결과가 바뀔 때마다 증가 (늦게 끝난 저장 요청이 새 결과 화면을 건드리지 않게 하는 기준)
 	};
 	var controller = null;
 	var requestSeq = 0;
@@ -106,21 +124,62 @@
 		return r >= 1000 ? (r / 1000) + 'km (' + r + 'm)' : r + 'm';
 	}
 
+	function pad(n) {
+		return n < 10 ? '0' + n : String(n);
+	}
+
+	// ISO-8601(UTC) 문자열을 브라우저 지역 시간 "YYYY-MM-DD HH:mm"으로 표시한다.
+	function formatDateTime(iso) {
+		var date = iso ? new Date(iso) : null;
+		if (!date || isNaN(date.getTime())) {
+			return NO_INFO;
+		}
+		return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + ' '
+			+ pad(date.getHours()) + ':' + pad(date.getMinutes());
+	}
+
+	// 코드포인트(이모지 등 포함) 기준으로 자른다.
+	function shorten(text, max) {
+		var chars = Array.from(String(text));
+		return chars.length > max ? chars.slice(0, max).join('') + '…' : chars.join('');
+	}
+
 	/* ---------- 탭 ---------- */
 
-	function showTab(name) {
-		var analysis = name === 'analysis';
-		el.section.hidden = !analysis;
-		if (el.buildingSection) {
-			el.buildingSection.hidden = analysis;
+	var TABS = ['building', 'analysis', 'history'];
+
+	function tabParts(name) {
+		if (name === 'building') {
+			return [el.tabBuilding, el.buildingSection];
 		}
-		[[el.tabBuilding, !analysis], [el.tabAnalysis, analysis]].forEach(function (pair) {
-			if (pair[0]) {
-				pair[0].setAttribute('aria-selected', String(pair[1]));
-				pair[0].setAttribute('tabindex', pair[1] ? '0' : '-1');
-				pair[0].classList.toggle('is-active', pair[1]);
+		return name === 'history' ? [el.tabHistory, el.historySection] : [el.tabAnalysis, el.section];
+	}
+
+	// 건물 정보 / 반경 분석 / 분석 이력 탭. 선택된 탭의 패널만 보이고, 'gis:tabchange'로 알린다.
+	function showTab(name) {
+		if (TABS.indexOf(name) < 0 || !tabParts(name)[1]) {
+			name = 'analysis';
+		}
+		TABS.forEach(function (tabName) {
+			var parts = tabParts(tabName);
+			var active = tabName === name;
+			if (parts[1]) {
+				parts[1].hidden = !active;
+			}
+			if (parts[0]) {
+				parts[0].setAttribute('aria-selected', String(active));
+				parts[0].setAttribute('tabindex', active ? '0' : '-1');
+				parts[0].classList.toggle('is-active', active);
 			}
 		});
+		document.dispatchEvent(new CustomEvent('gis:tabchange', { detail: { tab: name } }));
+	}
+
+	function openInfoPanel(tab) {
+		showTab(tab);
+		if (window.gisLayout) {
+			window.gisLayout.openPanel('info');
+		}
 	}
 
 	/* ---------- 상태 표시 ---------- */
@@ -167,7 +226,7 @@
 	}
 
 	function summaryText(result) {
-		var text = '분석 완료 · 건물 ' + countText(result);
+		var text = (state.source === 'saved' ? '저장된 분석 표시 중 · 건물 ' : '분석 완료 · 건물 ') + countText(result);
 		var drawn = Object.keys(state.drawnIds).length;
 		if (result.summary.intersecting > drawn) {
 			text += ' · 지도 표시 ' + drawn + '개';
@@ -187,9 +246,61 @@
 		if (el.tabAnalysis) {
 			el.tabAnalysis.classList.toggle('has-result', stateName === 'done');
 		}
+		renderSource();
+	}
+
+	// 실시간/저장본 구분 표시: 결과 배지 문구, 저장본 안내 띠, 지도 위 저장본 표시 막대
+	function renderSource() {
+		var done = el.section.getAttribute('data-state') === 'done' && !!state.result;
+		var saved = done && state.source === 'saved' && !!state.saved;
+		el.section.setAttribute('data-source', saved ? 'saved' : (done ? 'live' : ''));
+		if (el.kind) {
+			el.kind.hidden = !done;
+			el.kind.textContent = saved ? '저장된 분석 결과' : '실시간 분석 결과';
+			el.kind.className = 'analysis__kind analysis__kind--' + (saved ? 'saved' : 'live');
+		}
+		if (el.savedBanner) {
+			el.savedBanner.hidden = !saved;
+			if (saved) {
+				el.savedTitle.textContent = state.saved.title;
+				el.savedMeta.textContent = '분석 ' + formatDateTime(state.saved.analyzedAt) + ' · 저장 '
+					+ formatDateTime(state.saved.savedAt) + ' · 저장 시점의 데이터이며 현재 VWorld 데이터와 다를 수 있습니다.';
+			}
+		}
+		if (el.savedBar) {
+			el.savedBar.hidden = !saved;
+			if (saved && el.savedBarTitle) {
+				el.savedBarTitle.textContent = state.saved.title;
+			}
+		}
+	}
+
+	function current() {
+		var result = state.status === 'done' ? state.result : null;
+		var saved = result && state.source === 'saved';
+		return {
+			generation: state.generation,
+			source: result ? state.source : null,
+			analysisToken: result && !saved ? result.analysisToken || null : null,
+			analyzedAt: result ? (saved ? state.saved.analyzedAt : result.analyzedAt || null) : null,
+			analysisId: saved ? state.saved.analysisId : null,
+			title: saved ? state.saved.title : null,
+			radius: result ? result.radiusMeters : null,
+			center: result ? { lon: result.center.lon, lat: result.center.lat } : null,
+			buildingCount: result ? result.summary.intersecting : null,
+			complete: result ? !!result.complete : null
+		};
+	}
+
+	function notifyResult() {
+		document.dispatchEvent(new CustomEvent('gis:analysisresult', { detail: current() }));
 	}
 
 	function clearResultPanel() {
+		var hadResult = !!state.result;
+		state.generation++;
+		state.source = null;
+		state.saved = null;
 		state.result = null;
 		state.drawnIds = {};
 		state.shown = 0;
@@ -199,6 +310,9 @@
 		el.completeness.textContent = '';
 		el.more.hidden = true;
 		setSectionState('empty', null);
+		if (hadResult) {
+			notifyResult();
+		}
 	}
 
 	/* ---------- 중심점 / 반경 ---------- */
@@ -341,9 +455,13 @@
 
 	/* ---------- 결과 ---------- */
 
-	function showResult(result) {
+	// 실시간 결과와 저장본이 같은 화면을 쓴다. renderer.showResult가 이전 분석 도형을 모두 지운 뒤 그린다.
+	function displayResult(result, source, saved) {
+		state.generation++;
 		state.status = 'done';
 		state.result = result;
+		state.source = source;
+		state.saved = saved || null;
 		state.drawnIds = {};
 		var toDraw = result.buildings.slice(0, MAP_LIMIT);
 		var drawn = 0;
@@ -351,7 +469,8 @@
 			drawn = renderer.showResult({ lon: result.center.lon, lat: result.center.lat }, result.radiusMeters,
 				toDraw.map(function (b) {
 					return { id: b.id, relation: b.relation, polygons: b.polygons };
-				}));
+				}),
+				source === 'saved' ? { style: 'saved', label: '저장된 분석 · ' + shorten(saved.title, 30) } : undefined);
 			toDraw.forEach(function (b) {
 				if (renderer.isDrawn(b.id)) {
 					state.drawnIds[b.id] = true;
@@ -360,13 +479,74 @@
 		}
 		renderPanel(result, drawn);
 		renderControls();
+	}
+
+	function showResult(result) {
+		displayResult(result, 'live', null);
 		setMessage(result.complete ? '' : '일부 건물만 조회된 결과입니다. 결과 패널의 안내를 확인하세요.');
 		if (!isMobile()) {
-			showTab('analysis');
-			if (window.gisLayout) {
-				window.gisLayout.openPanel('info');
-			}
+			openInfoPanel('analysis');
 		}
+		notifyResult();
+	}
+
+	function isValidResult(result) {
+		return !!(result && result.center && isFinite(result.center.lon) && isFinite(result.center.lat)
+			&& isFinite(result.radiusMeters) && result.summary && Array.isArray(result.buildings));
+	}
+
+	/*
+	 * 저장된 분석을 지도와 결과 패널에 표시한다. detail: GET /api/analyses/{id} 응답
+	 * 진행 중인 실시간 분석은 취소하고, 이전 결과(실시간이든 저장본이든)를 지운 뒤 그린다.
+	 * 중심점과 반경도 저장값으로 맞춰 "같은 범위로 다시 분석"할 수 있게 한다.
+	 */
+	function showSaved(detail) {
+		if (!detail || !isValidResult(detail.result) || detail.analysisId == null) {
+			return false;
+		}
+		var result = detail.result;
+		abortRequest();
+		clearResultPanel();
+		state.center = { lon: result.center.lon, lat: result.center.lat };
+		state.radius = result.radiusMeters;
+		displayResult(result, 'saved', {
+			analysisId: detail.analysisId,
+			title: detail.title == null ? '' : String(detail.title),
+			analyzedAt: detail.analyzedAt,
+			savedAt: detail.savedAt
+		});
+		var moved = moveTo(state.center, Math.max(700, Math.round(result.radiusMeters * 3.2)));
+		setMessage('저장된 분석을 표시했습니다.' + (moved ? '' : ' (지도 이동 실패)'));
+		if (isMobile()) {
+			// 작은 화면에서는 지도를 보여 주고, 지도 위 막대의 "결과 보기"로 패널을 연다.
+			if (window.gisLayout) {
+				window.gisLayout.closePanels();
+			}
+		} else {
+			openInfoPanel('analysis');
+		}
+		notifyResult();
+		return true;
+	}
+
+	// 지금 표시 중인 저장본이 삭제되면 표시를 해제한다.
+	function clearSaved(analysisId) {
+		if (state.status !== 'done' || state.source !== 'saved' || !state.saved
+				|| state.saved.analysisId !== analysisId) {
+			return false;
+		}
+		resetAnalysis('삭제된 저장 분석의 표시를 해제했습니다.');
+		return true;
+	}
+
+	function rerunSaved() {
+		if (!state.center) {
+			return;
+		}
+		if (window.gisTools && mode() !== 'radius') {
+			window.gisTools.setMode('radius');
+		}
+		run();
 	}
 
 	function renderPanel(result, drawn) {
@@ -553,12 +733,13 @@
 		return n ? { lon: sumLon / n, lat: sumLat / n } : null;
 	}
 
-	function moveTo(point) {
+	function moveTo(point, height) {
 		if (!map || typeof map.moveTo !== 'function' || !window.vw || typeof vw.CameraPosition !== 'function') {
 			return false;
 		}
 		try {
-			map.moveTo(new vw.CameraPosition(new vw.CoordZ(point.lon, point.lat, 400), new vw.Direction(0, -90, 0)));
+			map.moveTo(new vw.CameraPosition(new vw.CoordZ(point.lon, point.lat, height || 400),
+				new vw.Direction(0, -90, 0)));
 			return true;
 		} catch (e) {
 			console.warn('[GIS 3D 지도] 지도 이동 실패', e);
@@ -615,7 +796,8 @@
 
 	/* ---------- 초기화 / 모드 ---------- */
 
-	function resetAnalysis() {
+	function resetAnalysis(message) {
+		var wasSaved = state.status === 'done' && state.source === 'saved';
 		abortRequest();
 		state.center = null;
 		state.status = 'idle';
@@ -624,7 +806,8 @@
 			renderer.clear();
 		}
 		renderControls();
-		setMessage('분석 결과를 초기화했습니다. (측정 결과는 유지됩니다)');
+		setMessage(typeof message === 'string' ? message
+			: (wasSaved ? '저장된 분석 표시를 해제했습니다.' : '분석 결과를 초기화했습니다.') + ' (측정 결과는 유지됩니다)');
 	}
 
 	function onMapClick(windowPosition, ecefPosition, cartographic) {
@@ -695,17 +878,33 @@
 		}
 	});
 	el.run.addEventListener('click', run);
-	el.reset.addEventListener('click', resetAnalysis);
+	el.reset.addEventListener('click', function () {
+		resetAnalysis();
+	});
 	if (el.clear) {
-		el.clear.addEventListener('click', resetAnalysis);
+		el.clear.addEventListener('click', function () {
+			resetAnalysis();
+		});
+	}
+	if (el.savedRerun) {
+		el.savedRerun.addEventListener('click', rerunSaved);
+	}
+	[el.savedClose, el.savedBarClose].forEach(function (button) {
+		if (button) {
+			button.addEventListener('click', function () {
+				resetAnalysis();
+			});
+		}
+	});
+	if (el.savedBarOpen) {
+		el.savedBarOpen.addEventListener('click', function () {
+			openInfoPanel('analysis');
+		});
 	}
 	el.more.addEventListener('click', showMore);
 	if (el.openResults) {
 		el.openResults.addEventListener('click', function () {
-			showTab('analysis');
-			if (window.gisLayout) {
-				window.gisLayout.openPanel('info');
-			}
+			openInfoPanel('analysis');
 		});
 	}
 	if (el.tabBuilding) {
@@ -716,6 +915,11 @@
 	if (el.tabAnalysis) {
 		el.tabAnalysis.addEventListener('click', function () {
 			showTab('analysis');
+		});
+	}
+	if (el.tabHistory) {
+		el.tabHistory.addEventListener('click', function () {
+			showTab('history');
 		});
 	}
 	// 건물 정보 패널(building-info.js)을 수정하지 않고, 건물이 선택되면 건물 정보 탭으로 전환한다.
@@ -748,7 +952,18 @@
 
 	window.gisAnalysis = {
 		getState: function () {
-			return { center: state.center, radius: state.radius, status: state.status, selectedId: state.selectedId };
-		}
+			return {
+				center: state.center, radius: state.radius, status: state.status, selectedId: state.selectedId,
+				source: state.status === 'done' ? state.source : null
+			};
+		},
+		// 저장/이력 모듈(map-history.js)용
+		getCurrent: current,
+		showSaved: showSaved,
+		clearSaved: clearSaved,
+		showTab: showTab,
+		openInfoPanel: openInfoPanel,
+		formatDateTime: formatDateTime,
+		formatRadius: formatRadius
 	};
 })();

@@ -48,6 +48,17 @@ public class RadiusAnalysisService {
 
 	private static final int[][] FLOOR_BUCKETS = { { 1, 2 }, { 3, 5 }, { 6, 10 }, { 11, 20 }, { 21, -1 } };
 
+	/** Shared with saved analyses so a restored result reads exactly like a live one. */
+	public static final String CRITERION_DESCRIPTION = "건물 다각형이 반경 원과 일부라도 겹치면 포함합니다. "
+			+ "다각형 전체가 원 안이면 완전 포함(INSIDE), 일부만 겹치거나 경계에 접하면 경계 걸침(PARTIAL)입니다. "
+			+ "내부 구멍은 건물 밖으로 판정합니다.";
+
+	public static final String DISTANCE_DESCRIPTION = "중심점에서 건물 다각형까지의 최단 수평거리(m)입니다. "
+			+ "중심점이 건물 안이면 0m이며, 지형을 반영한 실제 이동 거리가 아닙니다.";
+
+	public static final DataSource DATA_SOURCE = new DataSource("VWorld 2D 데이터 API", "LT_C_SPBD (도로명주소 건물)",
+			"EPSG:4326 (WGS84 경위도)", "건물 용도와 준공연도는 이 데이터에서 제공하지 않습니다. 3D 건물 모델과 정확히 일치하지 않을 수 있습니다.");
+
 	private final VWorldBuildingClient client;
 
 	private final LongSupplier nanoClock;
@@ -164,14 +175,9 @@ public class RadiusAnalysisService {
 		Summary summary = new Summary(included.size(), inside, included.size() - inside, outside, unavailable,
 				merged.size(), collected.size() - merged.size());
 		return new RadiusAnalysisResult(new Center(lon, lat), radiusMeters, RadiusAnalysisResult.CRITERION,
-				"건물 다각형이 반경 원과 일부라도 겹치면 포함합니다. 다각형 전체가 원 안이면 완전 포함(INSIDE), "
-						+ "일부만 겹치거나 경계에 접하면 경계 걸침(PARTIAL)입니다. 내부 구멍은 건물 밖으로 판정합니다.",
-				"중심점에서 건물 다각형까지의 최단 수평거리(m)입니다. 중심점이 건물 안이면 0m이며, "
-						+ "지형을 반영한 실제 이동 거리가 아닙니다.",
-				reasons.isEmpty(), List.copyOf(reasons.values()), reportedTotal, collected.size(), fetchedPages,
-				reportedPages, summary, floorStatistics(included), List.copyOf(included),
-				new DataSource("VWorld 2D 데이터 API", "LT_C_SPBD (도로명주소 건물)", "EPSG:4326 (WGS84 경위도)",
-						"건물 용도와 준공연도는 이 데이터에서 제공하지 않습니다. 3D 건물 모델과 정확히 일치하지 않을 수 있습니다."));
+				CRITERION_DESCRIPTION, DISTANCE_DESCRIPTION, reasons.isEmpty(), List.copyOf(reasons.values()),
+				reportedTotal, collected.size(), fetchedPages, reportedPages, summary, floorStatistics(included),
+				List.copyOf(included), DATA_SOURCE);
 	}
 
 	private static int expectedPages(Integer reportedTotal, Integer reportedPages) {
@@ -254,26 +260,45 @@ public class RadiusAnalysisService {
 				floors.add(value);
 			}
 		}
+		int[] bucketCounts = new int[FLOOR_BUCKETS.length];
+		for (int i = 0; i < FLOOR_BUCKETS.length; i++) {
+			int min = FLOOR_BUCKETS[i][0];
+			int max = FLOOR_BUCKETS[i][1];
+			bucketCounts[i] = (int) floors.stream().filter((f) -> f >= min && (max < 0 || f <= max)).count();
+		}
+		long sum = floors.stream().mapToLong(Integer::longValue).sum();
+		Integer min = floors.stream().min(Integer::compare).orElse(null);
+		Integer max = floors.stream().max(Integer::compare).orElse(null);
+		return floorStatistics(floors.size(), buildings.size() - floors.size(), min, max, sum, bucketCounts);
+	}
+
+	/**
+	 * Builds the statistics from aggregates, so a saved analysis (aggregated in SQL) is restored with exactly the
+	 * same labels and rounding as the live result.
+	 *
+	 * @param bucketCounts buildings per floor bucket: 1~2, 3~5, 6~10, 11~20, 21+
+	 */
+	public static FloorStatistics floorStatistics(int withData, int withoutData, Integer min, Integer max,
+			long floorSum, int[] bucketCounts) {
+		if (bucketCounts.length != FLOOR_BUCKETS.length) {
+			throw new IllegalArgumentException("expected " + FLOOR_BUCKETS.length + " floor buckets");
+		}
 		List<FloorBucket> distribution = new ArrayList<>();
-		for (int[] bucket : FLOOR_BUCKETS) {
-			int min = bucket[0];
-			Integer max = (bucket[1] < 0) ? null : bucket[1];
-			int count = (int) floors.stream().filter((f) -> f >= min && (max == null || f <= max)).count();
-			String label = (max == null) ? min + "층 이상" : min + "~" + max + "층";
-			distribution.add(new FloorBucket(label, min, max, count));
+		for (int i = 0; i < FLOOR_BUCKETS.length; i++) {
+			int bucketMin = FLOOR_BUCKETS[i][0];
+			Integer bucketMax = (FLOOR_BUCKETS[i][1] < 0) ? null : FLOOR_BUCKETS[i][1];
+			String label = (bucketMax == null) ? bucketMin + "층 이상" : bucketMin + "~" + bucketMax + "층";
+			distribution.add(new FloorBucket(label, bucketMin, bucketMax, bucketCounts[i]));
 		}
-		if (floors.isEmpty()) {
-			return new FloorStatistics(0, buildings.size(), null, null, null, List.copyOf(distribution));
+		if (withData == 0) {
+			return new FloorStatistics(0, withoutData, null, null, null, List.copyOf(distribution));
 		}
-		int min = floors.stream().mapToInt(Integer::intValue).min().getAsInt();
-		int max = floors.stream().mapToInt(Integer::intValue).max().getAsInt();
-		double average = round(floors.stream().mapToInt(Integer::intValue).average().getAsDouble(), 10);
-		return new FloorStatistics(floors.size(), buildings.size() - floors.size(), min, max, average,
-				List.copyOf(distribution));
+		double average = round((double) floorSum / withData, 10);
+		return new FloorStatistics(withData, withoutData, min, max, average, List.copyOf(distribution));
 	}
 
 	/** gro_flo_co is a string; only whole numbers of at least 1 are valid ("0" was seen in real responses). */
-	static Integer validFloors(String value) {
+	public static Integer validFloors(String value) {
 		if (value == null || !value.matches("\\d{1,4}")) {
 			return null;
 		}

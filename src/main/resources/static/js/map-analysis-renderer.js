@@ -10,23 +10,31 @@
  * - 분석 도형은 이 모듈이 정의(spec)와 함께 관리하고, 개별로 삭제한다.
  * - 측정 결과 초기화(vw.Map.clear)는 분석 도형까지 지우므로 restore()로 정의에서 다시 만든다.
  * - MultiPolygon은 조각마다 PolygonZ를 만든다. 구멍은 지도에 표시하지 못한다(서버 판정에는 반영).
+ * - 결과는 실시간(live, 파랑/주황)과 저장본(saved, 보라/분홍) 색상표로 구분하고, 중심점 문구로도 구분한다.
+ *   어느 쪽이든 그리기 전에 이전 분석 도형을 모두 지우므로 두 결과가 겹쳐 표시되지 않는다.
  */
 (function () {
 	'use strict';
 
 	var COLORS = {
 		previewCircle: [100, 116, 139, 70],
-		resultCircle: [37, 99, 235, 45],
-		INSIDE: [37, 99, 235, 150],
-		PARTIAL: [234, 140, 0, 170],
 		highlight: [220, 38, 38, 200]
 	};
+
+	// 결과 종류별 색상표. 관계(완전 포함/경계 걸침) 구분은 두 색상표 모두 유지한다.
+	var PALETTES = {
+		live: { circle: [37, 99, 235, 45], INSIDE: [37, 99, 235, 150], PARTIAL: [234, 140, 0, 170] },
+		saved: { circle: [124, 58, 237, 45], INSIDE: [124, 58, 237, 150], PARTIAL: [219, 39, 119, 160] }
+	};
+
+	var LABELS = { live: '분석 중심', saved: '저장된 분석' };
 
 	var map = null;
 	var pickHandler = null;
 	// { kind: 'circle'|'marker'|'building', spec, obj, buildingId? }
 	var items = [];
 	var highlightedId = null;
+	var currentStyle = null; // null(없음) | 'preview' | 'live' | 'saved'
 
 	function isSupported() {
 		return !!(window.vw && vw.geom && typeof vw.geom.CircleZ === 'function'
@@ -66,7 +74,7 @@
 
 	function fillFor(item) {
 		if (item.kind === 'building') {
-			return item.buildingId === highlightedId ? COLORS.highlight : COLORS[item.spec.relation];
+			return item.buildingId === highlightedId ? COLORS.highlight : PALETTES[item.spec.style][item.spec.relation];
 		}
 		return item.spec.fill;
 	}
@@ -126,14 +134,23 @@
 		items.forEach(remove);
 		items = [];
 		highlightedId = null;
+		currentStyle = null;
 	}
 
-	function drawCenter(center, radius, preview) {
+	function paletteName(style) {
+		return style === 'saved' ? 'saved' : 'live';
+	}
+
+	// style: 'preview' | 'live' | 'saved', label: 중심점 문구(없으면 종류별 기본 문구)
+	function drawCenter(center, radius, style, label) {
 		add('circle', {
 			lon: center.lon, lat: center.lat, radius: radius,
-			fill: preview ? COLORS.previewCircle : COLORS.resultCircle
+			fill: style === 'preview' ? COLORS.previewCircle : PALETTES[paletteName(style)].circle
 		});
-		add('marker', { lon: center.lon, lat: center.lat, label: preview ? '분석 전 · 범위 미리보기' : '분석 중심' });
+		add('marker', {
+			lon: center.lon, lat: center.lat,
+			label: label || (style === 'preview' ? '분석 전 · 범위 미리보기' : LABELS[paletteName(style)])
+		});
 	}
 
 	// 분석 전 미리보기: 원과 중심점만 표시한다.
@@ -142,20 +159,24 @@
 		if (!isSupported()) {
 			return false;
 		}
-		drawCenter(center, radius, true);
+		drawCenter(center, radius, 'preview');
+		currentStyle = 'preview';
 		return items.length > 0;
 	}
 
 	/*
 	 * buildings: [{ id, relation: 'INSIDE'|'PARTIAL', polygons: [rings[[lon, lat]]] }]
+	 * options: { style: 'live'(기본)|'saved', label: 중심점 문구 } - 생략하면 기존(실시간) 표시와 같다.
 	 * 반환: 실제로 그린 건물 수(일부 실패 시 줄어든다)
 	 */
-	function showResult(center, radius, buildings) {
+	function showResult(center, radius, buildings, options) {
 		clear();
 		if (!isSupported()) {
 			return 0;
 		}
-		drawCenter(center, radius, false);
+		var style = paletteName(options && options.style);
+		drawCenter(center, radius, style, options && options.label);
+		currentStyle = style;
 		var drawn = 0;
 		buildings.forEach(function (b) {
 			var ok = false;
@@ -163,7 +184,7 @@
 				var outer = rings[0] || [];
 				// 닫는 점(첫 점 반복)은 제외하고 넘긴다.
 				var ring = outer.length > 1 ? outer.slice(0, outer.length - 1) : outer;
-				if (ring.length >= 3 && add('building', { ring: ring, relation: b.relation }, b.id)) {
+				if (ring.length >= 3 && add('building', { ring: ring, relation: b.relation, style: style }, b.id)) {
 					ok = true;
 				}
 			});
@@ -232,6 +253,10 @@
 		clear: clear,
 		count: function () {
 			return items.length;
+		},
+		// 지금 지도에 그려진 분석 도형의 종류: null | 'preview' | 'live' | 'saved'
+		getStyle: function () {
+			return items.length ? currentStyle : null;
 		},
 		setPickHandler: function (fn) {
 			pickHandler = fn;
