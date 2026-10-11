@@ -16,16 +16,18 @@ from app.schemas.building_stats import BuildingStatsRequest, BuildingStatsRespon
 from app.schemas.common import ErrorResponse
 from app.schemas.compare import CompareRequest, CompareResponse
 from app.schemas.grid_density import GridDensityRequest, GridDensityResponse
+from app.schemas.hotspot import HotspotRequest, HotspotResponse
 from app.services.building_stats import compute_building_stats
 from app.services.compare import compare_analyses
 from app.services.grid_density import compute_grid_density
+from app.services.hotspot import compute_hotspot
 
 router = APIRouter(prefix="/internal/v1", tags=["internal"])
 
 _ERRORS = {status: {"model": ErrorResponse} for status in (400, 401, 413, 415, 422, 500, 503)}
 
 #: Request models documented in OpenAPI (see app.api.openapi.install).
-REQUEST_MODELS: list[type[BaseModel]] = [BuildingStatsRequest, GridDensityRequest, CompareRequest]
+REQUEST_MODELS: list[type[BaseModel]] = [BuildingStatsRequest, GridDensityRequest, CompareRequest, HotspotRequest]
 
 
 @router.post("/building-stats", response_model=BuildingStatsResponse, responses=_ERRORS,
@@ -57,6 +59,18 @@ async def grid_density(request: Request) -> GridDensityResponse:
 async def compare(request: Request) -> CompareResponse:
     body = await request.body()
     return await run_in_threadpool(_compute, CompareRequest, compare_analyses, body)
+
+
+@router.post("/hotspot", response_model=HotspotResponse, responses=_ERRORS,
+             openapi_extra=request_body(HotspotRequest),
+             summary="반경 분석 결과의 격자 핫스팟(Getis-Ord Gi*)과 전역 Moran's I",
+             description="요청 본문은 HotspotRequest(JSON)입니다. X-Internal-Token 헤더가 필요합니다. 부분 조회 결과"
+                         "(complete=false, 모든 사유)와 Python이 복구할 수 없는 건물 도형이 있으면 계산하지 않고 200과 "
+                         "status=PARTIAL_RESULT_BLOCKED, blockedReasons를 반환합니다. 셀은 grid-density와 같은 "
+                         "cells(GeoJSON FeatureCollection)에 Gi* 결과를 더해 반환합니다.")
+async def hotspot(request: Request) -> HotspotResponse:
+    body = await request.body()
+    return await run_in_threadpool(_compute, HotspotRequest, compute_hotspot, body)
 
 
 def _compute[Req: BaseModel, Res](model: type[Req], compute: Callable[[Req], Res], body: bytes) -> Res:

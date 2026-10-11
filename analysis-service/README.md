@@ -62,6 +62,7 @@ API docs (development): http://127.0.0.1:8001/docs
 | POST | `/internal/v1/building-stats` | `X-Internal-Token` | building statistics of one radius analysis |
 | POST | `/internal/v1/grid-density` | `X-Internal-Token` | building density per 50/100/200 m grid cell (GeoJSON) |
 | POST | `/internal/v1/compare-analyses` | `X-Internal-Token` | comparison of two saved radius analyses (body limit 32 MiB) |
+| POST | `/internal/v1/hotspot` | `X-Internal-Token` | grid hotspots (Getis-Ord Gi*) and global Moran's I of one complete radius analysis |
 
 `/docs` shows the request and response schemas of all internal endpoints. Use **Authorize** to enter the
 `X-Internal-Token` value; the check itself is still done by the middleware (`app/security.py`), so the documentation
@@ -292,6 +293,52 @@ update times can differ from real construction or demolition, and `ADDED`/`REMOV
 Measured: 5000 + 5000 buildings at r = 1000 m: 2.9 MiB request, 1.9 s end to end, 964 KiB response
 (617 modified, 40 renumbered ids reported as candidates); 45-vertex footprints: 18.5 MiB request, 4.2 s, about
 100 MiB peak Python allocation (GEOS memory not included).
+
+### POST /internal/v1/hotspot
+
+The building-stats request (without `includeBuildings`) plus:
+
+| Field | Rule |
+|---|---|
+| `cellSizeMeters` | required, 50, 100 or 200 (the grid of grid-density; every cell, no building ids) |
+| `permutations` | 99, 999 (default) or 9999: Moran's I permutation test |
+| `seed` | integer 0 – 2147483647, default 20261012: same request, same result |
+
+`includeEmptyCells`, `includeCellBuildingIds` and unknown fields are rejected (422).
+
+| Status | When | Response |
+|---|---|---|
+| `OK` | statistics computed | `grid`, `counts`, `moran`, every cell with its result; warning `SPARSE_VALUES` when fewer than 10 % of the tested cells have buildings |
+| `CONSTANT_VALUES` | every tested cell has the same coverage (also no buildings) | every cell `NOT_TESTED`, `moran: null`, warning |
+| `INSUFFICIENT_CELLS` | fewer than 30 cells can be tested | every cell `NOT_TESTED`, `moran: null`, warning |
+| `PARTIAL_RESULT_BLOCKED` | `complete: false` with **any** reason (known or not; no allow list), or a building Python cannot repair (`INVALID_GEOMETRY`, reported as `PYTHON_GEOMETRY_EXCLUDED`) | `200`, `blockedReasons`, `grid`/`counts`/`moran` `null`, no cells, summary 0, one `PARTIAL_RESULT_BLOCKED` warning. A partial request is blocked before the grid is computed; an unrepairable building after the grid, before the statistics. `ZERO_AREA` and `OUTSIDE_RADIUS` exclusions add no area and do not block |
+
+`completeness` is the grid-density completeness plus `sourceComplete` (Java `complete`) and
+`pythonGeometryExcluded`; `complete` is false exactly when the status is `PARTIAL_RESULT_BLOCKED`.
+
+Each cell (`cells.features`, same `id`, geometry and order as grid-density) has `col`, `row`, `centerLon`,
+`centerLat`, `boundary`, `smallBoundary`, `domainRatio`, `coverageRatio`, `neighborCount`, `giZ`, `pValue`, `qValue`,
+`hotspotClass` (`HOT_99/95/90`, `NOT_SIGNIFICANT`, `COLD_90/95/99`, `NOT_TESTED`), `bin` (3 … −3) and `reason`
+(`SMALL_BOUNDARY`, `NO_NEIGHBORS`, `UNDEFINED_VARIANCE`, `CONSTANT_VALUES`, `INSUFFICIENT_CELLS`). Statistics of
+untested cells are `null`. `moran` has `i`, `expected`, `pValue`, `zSimulated`, `simulatedMean`, `simulatedSd`
+(the simulated values are not returned).
+
+| Item | Rule |
+|---|---|
+| Variable | cell `coverageRatio` of grid-density |
+| Neighbors | Queen (8 directions) among cells that are not small boundary cells; small boundary cells and cells without a neighbor are not tested |
+| Gi* | binary weights including the cell, two-sided normal p-value |
+| Correction | Benjamini-Hochberg over the tested cells only; class by the **unrounded** q-value: q ≤ 0.01 / 0.05 / 0.10 → 99 / 95 / 90 %, sign of z → HOT / COLD |
+| Moran's I | row-standardized weights; p = (#{\|I_sim − E[I]\| ≥ \|I − E[I]\|} + 1) / (P + 1), E[I] = −1/(n−1) |
+| Rounding | `giZ` 4 decimals, `pValue`/`qValue` 6 significant digits, Moran values 6 decimals (`zSimulated` 4) |
+
+Limits (also in `method.limitations`): the Gi* p-value is a normal approximation (less reliable when most cells are
+0); BH controls the FDR for independent or positively dependent tests, which neighboring Gi* do not always prove, so
+10 / 5 / 1 % are nominal levels; results depend on the cell size; cells cut by the circle can have a coverage
+different from interior cells, so hot or cold spots along the boundary need care.
+
+Measured (synthetic, 5000 buildings at r = 1000 m, 50 m cells, 999 permutations, this test machine): about 0.95 s
+for grid-density plus statistics in the service.
 
 ### Errors (`{"error", "message", "details"?}`, never containing submitted values)
 
