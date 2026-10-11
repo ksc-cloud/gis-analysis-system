@@ -7,8 +7,9 @@ will proxy internal analysis requests in a later step.
 from fastapi import FastAPI
 
 from app import __version__
-from app.api import health
+from app.api import errors, health, internal
 from app.config import Settings
+from app.security import InternalApiGuard
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -22,7 +23,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/openapi.json" if docs else None,
     )
     app.state.settings = settings
+    app.add_middleware(InternalApiGuard, settings=settings)
+    errors.install(app)
     app.include_router(health.router)
+    app.include_router(internal.router)
     return app
 
 

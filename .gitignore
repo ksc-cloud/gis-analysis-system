@@ -54,3 +54,6 @@ __pycache__/
 .pytest_cache/
 .coverage
 htmlcov/
+
+### Python test fixtures with real data (addresses, building names) ###
+analysis-service/tests/fixtures/real/

@@ -52,3 +52,14 @@ def test_repr_hides_token():
     settings = Settings.from_env({"ANALYSIS_INTERNAL_TOKEN": "secret-value"})
 
     assert "secret-value" not in repr(settings)
+
+
+def test_body_limit_default_and_override():
+    assert Settings.from_env({}).max_body_bytes == 16 * 1024 * 1024
+    assert Settings.from_env({"ANALYSIS_MAX_BODY_BYTES": "2048"}).max_body_bytes == 2048
+
+
+@pytest.mark.parametrize("value", ["abc", "100", str(64 * 1024 * 1024 + 1)])
+def test_invalid_body_limit_is_rejected(value):
+    with pytest.raises(ValueError, match="ANALYSIS_MAX_BODY_BYTES"):
+        Settings.from_env({"ANALYSIS_MAX_BODY_BYTES": value})
