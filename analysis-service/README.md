@@ -308,6 +308,33 @@ Measured: 5000 + 5000 buildings at r = 1000 m: 2.9 MiB request, 1.9 s end to end
 Limits: 5,000 buildings, 100 polygons per building, 100 rings per polygon, 10,000 positions per ring,
 500,000 positions in total. Center: lon 124–132, lat 33–39; radius: integer 50–1000 (same as Java).
 
+## Java integration (step 8-5)
+
+The Spring Boot application calls this service server to server (`com.example.gis_analysis_system.spatial`); the
+browser only calls Java:
+
+| Java API | Python endpoint |
+|---|---|
+| `GET /api/analyses/{id}/statistics?includeBuildings=false` | building-stats (saved analysis, `source.kind` `SAVED`) |
+| `GET /api/analyses/{id}/grid-density?cellSize=100&includeEmptyCells=true&includeBuildingIds=false` | grid-density |
+| `GET /api/analyses/{id}/comparison?with={otherId}&includeUnchanged=false&includeBuildingChanges=true` | compare-analyses (older analysis = `before`; same time: lower id) |
+| `GET /api/analysis-snapshots/{token}/statistics`, `.../grid-density` | building-stats / grid-density of an unsaved result (`LIVE`) |
+| `GET /api/spatial-analysis/status` | `/health` → `{"available", "configured"}` only |
+
+Java answers `{"analysisIds": [...], "analysisService": {"schemaVersion": 1}, "result": <this service's response>}`
+after checking the response structure. Use the **same** `ANALYSIS_INTERNAL_TOKEN` for both servers (Java reads the
+environment variable or `analysis-service.internal-token` in the git-ignored `application-local.properties`); Java
+accepts only a loopback `ANALYSIS_SERVICE_URL` (default `http://127.0.0.1:8001`). When this service is not running,
+only these Java endpoints answer 503; the map, radius analysis and history are unaffected.
+
+Opt-in Java tests against a running service (they only send analysis requests):
+
+```powershell
+$env:ANALYSIS_IT_URL = "http://127.0.0.1:8001"; $env:ANALYSIS_IT_TOKEN = "<the server's token>"
+.\mvnw.cmd test "-Dtest=PythonServiceLiveTests,SpatialAnalysisApiLiveTests"
+# with GIS_TEST_DB_* also set: SpatialAnalysisMariaDbLiveTests (saves and deletes its own analyses)
+```
+
 ## Configuration (environment variables)
 
 | Variable | Default | Description |

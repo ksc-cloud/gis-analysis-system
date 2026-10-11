@@ -9,3 +9,8 @@ vworld.api-key=
 # The URL and user default to jdbc:mariadb://127.0.0.1:3306/gis_analysis and gis_app (GIS_DB_URL / GIS_DB_USERNAME).
 # The GIS_DB_PASSWORD environment variable can be used instead.
 spring.datasource.password=
+
+# Internal token shared with the Python analysis service (analysis-service/). Use the same value as the Python
+# server's ANALYSIS_INTERNAL_TOKEN; the ANALYSIS_INTERNAL_TOKEN environment variable can be used instead.
+# Never put a real token here. Optional: ANALYSIS_SERVICE_URL (default http://127.0.0.1:8001, loopback only).
+analysis-service.internal-token=
