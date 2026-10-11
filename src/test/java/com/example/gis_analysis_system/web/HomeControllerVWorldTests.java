@@ -185,12 +185,16 @@ class HomeControllerVWorldTests {
 			.contains("id=\"spatial-kpis\"")
 			.contains("id=\"spatial-completeness\"")
 			.contains("id=\"spatial-warnings\" hidden")
-			.contains("<button type=\"button\" class=\"spatial-views__button\" aria-pressed=\"true\">통계</button>")
+			.contains("id=\"spatial-view-button-stats\" data-view=\"stats\"")
+			.contains("aria-pressed=\"true\" aria-controls=\"spatial-view-stats\">통계</button>")
+			.contains("id=\"spatial-view-stats\"")
 			.contains("data-api-base=\"/api\"");
-		// Grid and comparison are announced but cannot be used yet (steps 8-6B and 8-6C).
-		assertThat(body.split("class=\"spatial-views__button\" aria-pressed=\"false\" disabled", -1)).hasSize(3);
+		// The grid is announced but cannot be used yet (step 8-6B); the comparison view is enabled (8-6C).
+		assertThat(body.split("class=\"spatial-views__button\" aria-pressed=\"false\" disabled", -1)).hasSize(2);
 		assertThat(body).contains(">격자 <span class=\"spatial-views__soon\">준비 중</span>")
-			.contains(">비교 <span class=\"spatial-views__soon\">준비 중</span>");
+			.contains("id=\"spatial-view-button-compare\" data-view=\"compare\"")
+			.contains("aria-pressed=\"false\" aria-controls=\"spatial-view-compare\">비교</button>")
+			.doesNotContain(">비교 <span class=\"spatial-views__soon\">");
 
 		int analysisScript = body.indexOf("/js/map-analysis.js");
 		int historyScript = body.indexOf("/js/map-history.js");
@@ -206,6 +210,41 @@ class HomeControllerVWorldTests {
 		// The browser only talks to Java: no Python address, internal path or token header on the page.
 		assertThat(body).doesNotContain("8001").doesNotContain("/internal/").doesNotContain("X-Internal-Token")
 			.doesNotContain("ANALYSIS_INTERNAL_TOKEN");
+	}
+
+	@Test
+	void homeRendersTheComparisonViewAndHistorySelectionAndLoadsTheCompareScriptLast() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		assertThat(body).contains("id=\"history-compare\" hidden")
+			.contains("id=\"history-compare-text\" role=\"status\" aria-live=\"polite\"")
+			.contains("id=\"history-compare-run\" disabled>선택한 2건 비교</button>")
+			.contains("id=\"history-compare-clear\">선택 해제</button>")
+			.contains("id=\"spatial-view-compare\" data-state=\"empty\" hidden")
+			.contains("id=\"compare-empty\"")
+			.contains("id=\"compare-run\" disabled>선택한 2건 비교</button>")
+			.contains("id=\"compare-include-unchanged\"")
+			.contains("id=\"compare-status\" role=\"status\" aria-live=\"polite\" hidden")
+			.contains("id=\"compare-result\" hidden")
+			.contains("id=\"compare-basis\"")
+			.contains("id=\"compare-metrics\"")
+			.contains("id=\"compare-lists\"")
+			.contains("id=\"compare-notes\"");
+		// The history list must come after the selection bar inside the history tab.
+		assertThat(body.indexOf("id=\"history-compare\"")).isLessThan(body.indexOf("id=\"history-list\""))
+			.isGreaterThan(body.indexOf("id=\"history-section\""));
+
+		int historyScript = body.indexOf("/js/map-history.js");
+		int dashboardScript = body.indexOf("/js/spatial-dashboard.js");
+		int compareScript = body.indexOf("/js/spatial-compare.js");
+		int mapScript = body.indexOf("/js/vworld-map.js");
+		// spatial-compare.js reads window.gisSpatialDashboard for the service state and exposes window.gisCompare,
+		// which map-history.js uses when it draws the list.
+		assertThat(dashboardScript).isGreaterThan(historyScript);
+		assertThat(compareScript).isGreaterThan(dashboardScript);
+		assertThat(mapScript).isGreaterThan(compareScript);
+		assertThat(body.substring(compareScript - 120, compareScript + 120)).contains("data-api-base=\"/api\"");
 	}
 
 }

@@ -12,6 +12,8 @@
  *   다시 확인한다. 주기적으로 확인하지 않는다. 사용할 수 없으면 통계만 안내하고 다른 기능에는 영향을 주지 않는다.
  * - 오류가 나도 지도와 반경 분석 결과는 건드리지 않는다. 외부 문자열은 textContent로만 넣는다.
  * - 상태 관리(createController)와 화면 값 계산(buildView, kpis)은 DOM 없이 동작해 node --test로 검사한다.
+ * - 공간 분석 탭에는 통계·격자·비교 보기가 있다(보기 전환: spatial-compare.js, 'gis:spatialviewchange').
+ *   통계는 통계 보기가 보일 때만 요청한다. 분석 서버 상태가 바뀌면 'gis:spatialstatus' { state }를 보낸다.
  */
 (function (factory) {
 	'use strict';
@@ -356,7 +358,8 @@
 		}
 		var analysis = win.gisAnalysis;
 		var base = (script && script.getAttribute('data-api-base')) || '/api';
-		var rendered = { viewKey: null };
+		var rendered = { viewKey: null, serviceState: null };
+		var visibility = { tab: !el.section.hidden, view: 'stats' };
 
 		function show(node, visible) {
 			if (node) {
@@ -377,6 +380,10 @@
 		}
 
 		function renderService(service) {
+			if (rendered.serviceState !== service.state) {
+				rendered.serviceState = service.state;
+				doc.dispatchEvent(new win.CustomEvent('gis:spatialstatus', { detail: { state: service.state } }));
+			}
 			el.serviceBox.setAttribute('data-state', service.state);
 			el.serviceBadge.textContent = api.SERVICE_LABELS[service.state] || service.state;
 			el.serviceText.textContent = api.SERVICE_TEXTS[service.state] || '';
@@ -515,19 +522,31 @@
 		doc.addEventListener('gis:analysissaved', function (event) {
 			controller.analysisSaved(event.detail);
 		});
-		doc.addEventListener('gis:tabchange', function (event) {
-			if (event.detail && event.detail.tab === 'spatial') {
+		// 공간 분석 탭이 열려 있고 통계 보기일 때만 통계를 요청한다. 탭을 열면 보기와 관계없이 서버 상태를 확인한다.
+		function syncVisibility() {
+			if (visibility.tab && visibility.view === 'stats') {
 				controller.show();
 			} else {
 				controller.hide();
+				if (visibility.tab) {
+					controller.refreshStatus(false);
+				}
 			}
+		}
+		doc.addEventListener('gis:tabchange', function (event) {
+			visibility.tab = !!(event.detail && event.detail.tab === 'spatial');
+			syncVisibility();
+		});
+		doc.addEventListener('gis:spatialviewchange', function (event) {
+			visibility.view = event.detail && event.detail.view ? event.detail.view : 'stats';
+			syncVisibility();
 		});
 
 		if (analysis && analysis.getCurrent) {
 			controller.setAnalysis(analysis.getCurrent());
 		}
-		if (!el.section.hidden) {
-			controller.show();
+		if (visibility.tab) {
+			syncVisibility();
 		} else {
 			controller.refreshStatus(true); // 페이지 로드 후 한 번 확인한다.
 		}

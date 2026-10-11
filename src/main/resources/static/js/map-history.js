@@ -13,6 +13,9 @@
  * - 저장 요청은 취소하지 않는다. 요청 중에 새 분석이 시작되어도 서버 저장은 끝까지 진행하고(이력 유실 방지),
  *   응답은 그 요청을 보낸 결과(generation)가 아직 화면에 있을 때만 저장 폼에 반영한다.
  * - 서버 연결 실패(fetch 실패)와 DB 연결 실패(503 DB_UNAVAILABLE)를 구분해 안내한다.
+ * - 저장된 분석 비교(8-6C): 항목마다 "비교 선택" 버튼을 둔다. 선택 상태(최대 2건)는 spatial-compare.js
+ *   (window.gisCompare)가 가지고 'gis:compareselection'으로 알린다. 이력을 삭제하면 'gis:historychange'
+ *   { deletedId }를 보내 선택과 비교 결과에서 지우게 한다.
  * - 외부 문자열(제목 등)은 모두 textContent로만 넣는다.
  */
 (function () {
@@ -378,10 +381,17 @@
 		return b;
 	}
 
+	function compareModule() {
+		return window.gisCompare && typeof window.gisCompare.toggle === 'function' ? window.gisCompare : null;
+	}
+
 	function createItem(item, isShown) {
 		var id = item.analysisId;
+		var compare = compareModule();
+		var selected = !!(compare && compare.isSelected(id));
 		var li = document.createElement('li');
-		li.className = 'history__item' + (isShown ? ' is-current' : '') + (id === history.highlightId ? ' is-highlight' : '');
+		li.className = 'history__item' + (isShown ? ' is-current' : '') + (id === history.highlightId ? ' is-highlight' : '')
+			+ (selected ? ' is-compare-selected' : '');
 		li.setAttribute('data-id', String(id));
 
 		var head = document.createElement('div');
@@ -439,6 +449,18 @@
 			remove.disabled = busy;
 			actions.appendChild(open);
 			actions.appendChild(remove);
+			if (compare) {
+				var pick = button(selected ? '비교 해제' : '비교 선택', 'tool-bar__button history__compare-toggle', function () {
+					compare.toggle(item);
+				});
+				pick.setAttribute('data-action', 'compare');
+				pick.setAttribute('aria-pressed', String(selected));
+				pick.disabled = busy || (!selected && !compare.canSelect(id));
+				if (pick.disabled && !busy) {
+					pick.title = '비교는 최대 2건까지 선택할 수 있습니다.';
+				}
+				actions.appendChild(pick);
+			}
 		}
 
 		li.appendChild(head);
@@ -502,6 +524,7 @@
 			if (res.ok || code === 'ANALYSIS_NOT_FOUND') {
 				history.confirmingId = null;
 				analysis.clearSaved(id);
+				document.dispatchEvent(new CustomEvent('gis:historychange', { detail: { deletedId: id } }));
 				if (history.highlightId === id) {
 					history.highlightId = null;
 				}
@@ -559,6 +582,11 @@
 	});
 	document.addEventListener('gis:analysisresult', function (event) {
 		onAnalysisResult(event.detail);
+	});
+	document.addEventListener('gis:compareselection', function () {
+		if (history.loaded) {
+			renderList(); // 비교 선택 표시와 버튼 상태 갱신
+		}
 	});
 	if (analysis.getCurrent) {
 		onAnalysisResult(analysis.getCurrent());

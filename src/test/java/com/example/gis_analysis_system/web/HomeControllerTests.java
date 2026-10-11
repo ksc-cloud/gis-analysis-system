@@ -156,8 +156,9 @@ class HomeControllerTests {
 	void spatialScriptsAreServedButNotLoadedWithoutApiKey() throws Exception {
 		HttpResponse<String> api = get("/js/spatial-api.js");
 		HttpResponse<String> dashboard = get("/js/spatial-dashboard.js");
+		HttpResponse<String> compare = get("/js/spatial-compare.js");
 
-		for (HttpResponse<String> response : List.of(api, dashboard)) {
+		for (HttpResponse<String> response : List.of(api, dashboard, compare)) {
 			assertThat(response.statusCode()).isEqualTo(200);
 			assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
 					(contentType) -> assertThat(contentType).contains("javascript"));
@@ -169,9 +170,13 @@ class HomeControllerTests {
 			.contains("/statistics").contains("Intl.NumberFormat('ko-KR'");
 		assertThat(dashboard.body()).contains("gis:analysisresult").contains("gis:analysissaved")
 			.contains("gis:tabchange").contains("AbortController").contains("textContent");
-		assertThat(get("/js/map-history.js").body()).contains("gis:analysissaved");
+		assertThat(compare.body()).contains("/comparison?with=").doesNotContain("신축했").contains("gis:compareselection")
+			.contains("gis:historychange").contains("gis:spatialviewchange").contains("AbortController");
+		assertThat(api.body()).contains("/comparison?with=").contains("%p");
+		assertThat(get("/js/map-history.js").body()).contains("gis:analysissaved").contains("gis:historychange")
+			.contains("gis:compareselection");
 		// Without a key the map scripts are not loaded, but the tab markup is still rendered.
-		assertThat(get("/").body()).doesNotContain("spatial-dashboard.js")
+		assertThat(get("/").body()).doesNotContain("spatial-dashboard.js").doesNotContain("spatial-compare.js")
 			.contains("id=\"tab-spatial\"")
 			.contains("id=\"spatial-section\"");
 	}

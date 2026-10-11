@@ -1805,6 +1805,310 @@ body {
 	}
 }
 
+/* ---------- 저장된 분석 비교 (8-6C) ---------- */
+
+.spatial-view[hidden],
+.history-compare[hidden],
+.compare__selection[hidden],
+.compare__result[hidden],
+.compare__reasons[hidden],
+.compare .analysis__subtitle[hidden],
+.compare .empty-state[hidden],
+.compare .spatial__warnings[hidden],
+.compare-list__more[hidden] {
+	display: none;
+}
+
+/* 분석 이력: 비교 선택 막대와 선택된 항목 */
+.history-compare {
+	margin: 0 0 10px;
+	padding: 8px 10px;
+	border: 1px solid var(--color-accent);
+	border-radius: var(--radius);
+	background: var(--color-accent-soft);
+	font-size: 12px;
+}
+
+.history-compare__text {
+	margin: 0 0 6px;
+	overflow-wrap: anywhere;
+}
+
+.history-compare__actions,
+.compare__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.history__item.is-compare-selected {
+	border-color: var(--color-accent);
+	box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.history__compare-toggle[aria-pressed="true"] {
+	border-color: var(--color-accent);
+	background: var(--color-accent-soft);
+	color: var(--color-accent);
+	font-weight: 600;
+}
+
+/* 공간 분석 탭: 비교 보기 */
+.compare__selection {
+	margin: 0 0 10px;
+	padding-left: 18px;
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.compare__actions {
+	margin-bottom: 8px;
+}
+
+.compare__option {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0 0 12px;
+	font-size: 12px;
+	color: var(--color-text-muted);
+}
+
+.compare__pair {
+	display: grid;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+.compare-side {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 8px 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	font-size: 12px;
+}
+
+.compare-side__label {
+	color: var(--color-text-muted);
+	font-size: 11px;
+}
+
+.compare-side__title,
+.compare-side__meta {
+	overflow-wrap: anywhere;
+}
+
+.compare-side__meta {
+	color: var(--color-text-muted);
+}
+
+.compare__reasons {
+	margin: 0 0 12px;
+	font-size: 12px;
+}
+
+.compare__reason-list {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.compare__reason-detail {
+	color: var(--color-text-muted);
+}
+
+.compare-metrics {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.compare-metric {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	padding: 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: #f8fafc;
+}
+
+.compare-metric__label,
+.compare-metric__rate {
+	color: var(--color-text-muted);
+	font-size: 11px;
+}
+
+.compare-metric__values {
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+
+.compare-metric__delta {
+	font-size: 15px;
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+
+/* 증가·감소는 색과 부호(+/-)를 함께 써서 색만으로 구분하지 않는다. 좋고 나쁨의 뜻은 없다. */
+.compare-delta--up {
+	color: #b54708;
+}
+
+.compare-delta--down {
+	color: #175cd3;
+}
+
+.compare-delta--zero,
+.compare-delta--none {
+	color: var(--color-text-muted);
+}
+
+.compare-summary {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.compare-summary__item {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	padding: 6px 8px;
+	border-radius: var(--radius);
+	background: #f1f4f8;
+	font-size: 12px;
+}
+
+.compare-summary__label {
+	color: var(--color-text-muted);
+	font-size: 11px;
+}
+
+.compare-summary__value {
+	overflow-wrap: anywhere;
+}
+
+.compare-list {
+	margin: 0 0 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+}
+
+.compare-list__summary {
+	padding: 8px 10px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.compare-list .panel-hint {
+	margin: 0;
+	padding: 0 10px 10px;
+}
+
+.compare-list__items {
+	margin: 0;
+	padding: 0 10px;
+	list-style: none;
+}
+
+.compare-list__more {
+	width: calc(100% - 20px);
+	margin: 6px 10px 10px;
+}
+
+.compare-item {
+	padding: 8px 0;
+	border-top: 1px solid var(--color-border);
+	font-size: 12px;
+}
+
+.compare-item__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 2px;
+}
+
+.compare-item__id {
+	overflow-wrap: anywhere;
+}
+
+.compare-item__row {
+	margin: 2px 0 0;
+	color: var(--color-text-muted);
+	overflow-wrap: anywhere;
+}
+
+.compare-status {
+	padding: 1px 6px;
+	border-radius: 999px;
+	background: #eef1f5;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+.compare-status--added,
+.compare-status--only_in_after {
+	background: #e7f6ec;
+	color: #157f3c;
+}
+
+.compare-status--removed,
+.compare-status--only_in_before {
+	background: #fdecec;
+	color: #b42318;
+}
+
+.compare-status--modified {
+	background: #fff7e6;
+	color: #9a6700;
+}
+
+.compare-status--low,
+.compare-status--uncomparable {
+	background: #f1f4f8;
+	color: var(--color-text-muted);
+}
+
+.compare__notes {
+	margin: 0;
+	padding-left: 18px;
+	color: var(--color-text-muted);
+	font-size: 12px;
+}
+
+.compare__notes li + li {
+	margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+	.history-compare .tool-bar__button,
+	.compare__actions .tool-bar__button,
+	.history__compare-toggle,
+	.compare-list__summary,
+	.compare-list__more {
+		min-height: 44px;
+	}
+}
+
+@media (max-width: 600px) {
+	.compare-metric {
+		padding: 8px;
+	}
+
+	.compare-metric__delta {
+		font-size: 14px;
+	}
+}
+
 /* ---------- 반응형 ---------- */
 
 @media (max-width: 1200px) {

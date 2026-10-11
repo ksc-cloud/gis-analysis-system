@@ -322,6 +322,14 @@
 				</select>
 				<span class="history__total" id="history-total"></span>
 			</div>
+			<%-- 비교 선택(최대 2건): spatial-compare.js가 선택 상태와 이 막대를 관리한다. --%>
+			<div class="history-compare" id="history-compare" hidden>
+				<p class="history-compare__text" id="history-compare-text" role="status" aria-live="polite"></p>
+				<div class="history-compare__actions">
+					<button type="button" class="tool-bar__button tool-bar__button--primary" id="history-compare-run" disabled>선택한 2건 비교</button>
+					<button type="button" class="tool-bar__button" id="history-compare-clear">선택 해제</button>
+				</div>
+			</div>
 			<p class="history__status" id="history-status" role="status" aria-live="polite" hidden></p>
 			<button type="button" class="building-status__retry" id="history-retry" hidden>다시 시도</button>
 			<p class="empty-state" id="history-empty" hidden>
@@ -339,18 +347,19 @@
 			</p>
 		</section>
 
-		<%-- 공간 분석: 공간 통계(8-6A). 격자와 비교는 다음 단계에서 제공한다. (spatial-dashboard.js) --%>
+		<%-- 공간 분석: 공간 통계(8-6A, spatial-dashboard.js), 저장된 분석 비교(8-6C, spatial-compare.js). 격자는 다음 단계. --%>
 		<section class="panel-section spatial" id="spatial-section" data-state="empty" role="tabpanel"
 				 aria-labelledby="spatial-title" hidden>
 			<div class="building__header">
 				<h2 class="panel-section__title" id="spatial-title">공간 분석</h2>
 			</div>
 			<div class="spatial-views" role="group" aria-label="공간 분석 화면">
-				<button type="button" class="spatial-views__button" aria-pressed="true">통계</button>
+				<button type="button" class="spatial-views__button" id="spatial-view-button-stats" data-view="stats"
+						aria-pressed="true" aria-controls="spatial-view-stats">통계</button>
 				<button type="button" class="spatial-views__button" aria-pressed="false" disabled
 						title="다음 단계에서 제공할 예정입니다.">격자 <span class="spatial-views__soon">준비 중</span></button>
-				<button type="button" class="spatial-views__button" aria-pressed="false" disabled
-						title="다음 단계에서 제공할 예정입니다.">비교 <span class="spatial-views__soon">준비 중</span></button>
+				<button type="button" class="spatial-views__button" id="spatial-view-button-compare" data-view="compare"
+						aria-pressed="false" aria-controls="spatial-view-compare">비교</button>
 			</div>
 			<div class="spatial-service" id="spatial-service" data-state="checking">
 				<div class="spatial-service__row">
@@ -362,6 +371,7 @@
 					공간 분석 서버 상태를 확인하고 있습니다...
 				</p>
 			</div>
+			<div class="spatial-view" id="spatial-view-stats">
 			<p class="empty-state" id="spatial-empty">
 				분석 결과가 없습니다.<br>
 				반경 분석을 실행하거나 분석 이력에서 저장된 분석을 열면 공간 통계를 계산합니다.
@@ -378,6 +388,37 @@
 					면적은 VWorld 도로명주소 건물 도형의 수평 면적(m²)이며 건축물대장의 건축면적과 다를 수 있습니다.
 					점유율은 반경 원 면적에 대한 건물 점유 면적의 비율(%)입니다.
 				</p>
+			</div>
+			</div>
+
+			<%-- 저장된 분석 비교 (spatial-compare.js) --%>
+			<div class="spatial-view compare" id="spatial-view-compare" data-state="empty" hidden>
+				<p class="empty-state" id="compare-empty">
+					비교할 분석이 선택되지 않았습니다.<br>
+					"분석 이력" 탭에서 저장된 분석 2건을 "비교 선택"으로 고른 뒤 "선택한 2건 비교"를 누르세요.
+				</p>
+				<ul class="compare__selection" id="compare-selection" hidden></ul>
+				<div class="compare__actions">
+					<button type="button" class="tool-bar__button tool-bar__button--primary" id="compare-run" disabled>선택한 2건 비교</button>
+					<button type="button" class="tool-bar__button" id="compare-open-history">분석 이력에서 선택</button>
+				</div>
+				<label class="compare__option">
+					<input type="checkbox" id="compare-include-unchanged"> 변경 없는 건물도 목록에 포함
+				</label>
+				<p class="spatial__status" id="compare-status" role="status" aria-live="polite" hidden></p>
+				<button type="button" class="building-status__retry" id="compare-retry" hidden>다시 시도</button>
+				<div class="compare__result" id="compare-result" hidden>
+					<div class="compare__pair" id="compare-pair"></div>
+					<div class="analysis__completeness" id="compare-basis"></div>
+					<div class="compare__reasons" id="compare-reasons" hidden></div>
+					<div class="compare-metrics" id="compare-metrics"></div>
+					<h3 class="analysis__subtitle" id="compare-summary-title">건물 변화 요약</h3>
+					<div class="compare-summary" id="compare-summary"></div>
+					<div class="compare__lists" id="compare-lists"></div>
+					<h3 class="analysis__subtitle" id="compare-warnings-title" hidden>비교 경고</h3>
+					<ul class="spatial__warnings" id="compare-warnings" hidden></ul>
+					<ul class="compare__notes" id="compare-notes"></ul>
+				</div>
 			</div>
 		</section>
 	</aside>
@@ -406,6 +447,9 @@
 		 호출한다. gis:analysisresult와 gis:analysissaved를 놓치지 않도록 map-history.js 다음, vworld-map.js 전에 로드한다. --%>
 	<script src="${pageContext.request.contextPath}/js/spatial-api.js"></script>
 	<script src="${pageContext.request.contextPath}/js/spatial-dashboard.js"
+			data-api-base="${pageContext.request.contextPath}/api"></script>
+	<%-- 저장된 분석 비교: GET /api/analyses/{id}/comparison?with={otherId}. 분석 이력의 "비교 선택"과 공간 분석 탭의 비교 보기 --%>
+	<script src="${pageContext.request.contextPath}/js/spatial-compare.js"
 			data-api-base="${pageContext.request.contextPath}/api"></script>
 	<%-- 지도 검색: /api/search 통신, 검색 위치 마커, "이 위치로 반경 분석"(window.gisAnalysis.startAt) --%>
 	<script src="${pageContext.request.contextPath}/js/map-search.js"

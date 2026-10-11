@@ -96,18 +96,24 @@ function page(routes, current) {
 	});
 	const listeners = {};
 	const requests = [];
+	const dispatched = [];
 	const doc = {
 		currentScript: { getAttribute: (name) => (name === 'data-api-base' ? '/ctx/api' : null) },
 		getElementById: (id) => elements[id] || null,
 		createElement: (tag) => new FakeElement(tag),
 		addEventListener: (type, listener) => {
 			(listeners[type] = listeners[type] || []).push(listener);
+		},
+		dispatchEvent: (event) => {
+			dispatched.push(event);
+			(listeners[event.type] || []).forEach((listener) => listener(event));
 		}
 	};
 	const win = {
 		gisSpatialApi: api,
 		gisAnalysis: { getCurrent: () => current || null, formatDateTime: (iso) => 'T(' + iso + ')' },
-		navigator: { onLine: true }
+		navigator: { onLine: true },
+		CustomEvent
 	};
 	global.fetch = (url) => {
 		requests.push(url);
@@ -120,6 +126,7 @@ function page(routes, current) {
 		el: elements,
 		win,
 		requests,
+		dispatched,
 		emit(type, detail) {
 			(listeners[type] || []).forEach((listener) => listener({ detail }));
 		}

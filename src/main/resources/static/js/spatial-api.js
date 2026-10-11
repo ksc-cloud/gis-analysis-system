@@ -5,10 +5,11 @@
  *   GET /api/spatial-analysis/status                    : { available, configured }
  *   GET /api/analysis-snapshots/{token}/statistics      : 저장 전 분석의 공간 통계
  *   GET /api/analyses/{id}/statistics                   : 저장된 분석의 공간 통계
+ *   GET /api/analyses/{id}/comparison?with={otherId}    : 저장된 분석 두 건의 비교 (8-6C, 이전·이후는 서버가 정한다)
  *   응답: { analysisIds, analysisService: { schemaVersion }, result: building-stats 응답 }
  *   오류: { error, message, analysisServiceError? }
  * - 오류 코드는 이 파일의 한국어 문구로만 안내한다. (서버 메시지를 그대로 쓰지 않는다)
- * - 숫자는 Intl.NumberFormat('ko-KR')로 표시한다. 점유율은 %(비율)이며 비교 화면의 %p(차이)와 구분한다.
+ * - 숫자는 Intl.NumberFormat('ko-KR')로 표시한다. 점유율은 %(비율), 점유율의 변화는 %p(퍼센트포인트)로 구분한다.
  * - 화면(DOM)과 무관한 순수 함수만 두어 Node 내장 테스트(node --test)로 검사한다.
  */
 (function (factory) {
@@ -40,7 +41,8 @@
 		STORED_DATA_INVALID: '저장된 분석 데이터를 읽을 수 없습니다.',
 		INVALID_TOKEN: '저장 전 분석 정보가 올바르지 않습니다. 반경 분석을 다시 실행하세요.',
 		INVALID_ID: '분석 이력 번호가 올바르지 않습니다.',
-		INVALID_REQUEST: '요청 형식이 올바르지 않습니다. 페이지를 새로 고친 뒤 다시 시도하세요.'
+		INVALID_REQUEST: '요청 형식이 올바르지 않습니다. 페이지를 새로 고친 뒤 다시 시도하세요.',
+		SAME_ANALYSIS: '서로 다른 두 분석을 선택해야 비교할 수 있습니다.'
 	};
 
 	// 본문에 오류 코드가 없을 때(프록시·기본 오류 페이지 등) 상태 코드로 판단한다.
@@ -81,6 +83,22 @@
 			return root + '/analysis-snapshots/' + encodeURIComponent(target.token) + '/statistics';
 		}
 		return null;
+	}
+
+	/*
+	 * 저장된 분석 두 건의 비교. 어느 쪽을 먼저 주어도 서버가 분석 시각 순으로 이전·이후를 정한다.
+	 * options: { includeUnchanged(기본 false), includeBuildingChanges(기본 true) }
+	 */
+	function comparisonUrl(analysisId, otherId, options, base) {
+		var root = base || DEFAULT_BASE;
+		var valid = /^\d{1,18}$/;
+		if (!valid.test(String(analysisId)) || !valid.test(String(otherId)) || String(analysisId) === String(otherId)) {
+			return null;
+		}
+		var includeUnchanged = !!(options && options.includeUnchanged);
+		var includeChanges = !(options && options.includeBuildingChanges === false);
+		return root + '/analyses/' + encodeURIComponent(analysisId) + '/comparison?with=' + encodeURIComponent(otherId)
+			+ '&includeUnchanged=' + includeUnchanged + '&includeBuildingChanges=' + includeChanges;
 	}
 
 	/* ---------- 요청 ---------- */
@@ -209,6 +227,18 @@
 		return isNumber(value) ? formatNumber(value, 2) + '%' : '-';
 	}
 
+	// 점유율 변화(차이)의 퍼센트포인트 표시. 부호를 붙인다. 예: +0.06%p
+	function formatPercentPoint(value) {
+		return isNumber(value) ? signed(value, formatNumber(Math.abs(value), 2)) + '%p' : '-';
+	}
+
+	function signed(value, text) {
+		if (value > 0) {
+			return '+' + text;
+		}
+		return value < 0 ? '-' + text : text;
+	}
+
 	function formatCount(value, unit) {
 		return isNumber(value) ? formatNumber(value, 0) + (unit == null ? '개' : unit) : '-';
 	}
@@ -231,6 +261,7 @@
 		SERVICE_TEXTS: SERVICE_TEXTS,
 		statusUrl: statusUrl,
 		statisticsUrl: statisticsUrl,
+		comparisonUrl: comparisonUrl,
 		getJson: getJson,
 		errorCode: errorCode,
 		describeError: describeError,
@@ -238,6 +269,8 @@
 		formatNumber: formatNumber,
 		formatArea: formatArea,
 		formatPercent: formatPercent,
+		formatPercentPoint: formatPercentPoint,
+		signed: signed,
 		formatCount: formatCount,
 		formatFloors: formatFloors,
 		formatRadius: formatRadius

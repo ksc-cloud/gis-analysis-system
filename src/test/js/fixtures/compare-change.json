@@ -1,0 +1,3020 @@
+{
+ "analysisIds": [
+  21,
+  22
+ ],
+ "analysisService": {
+  "schemaVersion": 1
+ },
+ "result": {
+  "schemaVersion": 1,
+  "comparable": true,
+  "comparisonBasis": "CHANGE",
+  "notComparableReasons": [],
+  "before": {
+   "source": {
+    "kind": "SAVED",
+    "analysisId": 1,
+    "analyzedAt": "2026-03-01T09:00:00Z"
+   },
+   "center": {
+    "lon": 127.0,
+    "lat": 37.5
+   },
+   "radiusMeters": 100,
+   "complete": true,
+   "incompleteReasons": [],
+   "criterion": "POLYGON_INTERSECTS_CIRCLE",
+   "dataSource": {
+    "provider": "VWorld 2D 데이터 API",
+    "layer": "LT_C_SPBD (도로명주소 건물)",
+    "coordinateSystem": "EPSG:4326 (WGS84 경위도)",
+    "notice": null
+   },
+   "counts": {
+    "total": 60,
+    "validGeometry": 60,
+    "analyzed": 58,
+    "repaired": 0,
+    "excluded": 2,
+    "inside": 53,
+    "partial": 5,
+    "zeroAreaInRadius": 0,
+    "multiPartOverlap": 0,
+    "duplicateGeometry": 0,
+    "relationMismatch": 0,
+    "distanceMismatch": 0
+   },
+   "identifiers": {
+    "bd": 60,
+    "feature": 0,
+    "row": 0,
+    "other": 0
+   },
+   "warnings": [
+    {
+     "code": "OUTSIDE_RADIUS",
+     "message": "반경 원에 닿지 않는 건물은 제외했습니다. 요청의 중심점이나 반경이 분석 결과와 다를 수 있습니다.",
+     "count": 2
+    }
+   ]
+  },
+  "after": {
+   "source": {
+    "kind": "SAVED",
+    "analysisId": 2,
+    "analyzedAt": "2026-09-01T09:00:00Z"
+   },
+   "center": {
+    "lon": 127.0,
+    "lat": 37.5
+   },
+   "radiusMeters": 100,
+   "complete": true,
+   "incompleteReasons": [],
+   "criterion": "POLYGON_INTERSECTS_CIRCLE",
+   "dataSource": {
+    "provider": "VWorld 2D 데이터 API",
+    "layer": "LT_C_SPBD (도로명주소 건물)",
+    "coordinateSystem": "EPSG:4326 (WGS84 경위도)",
+    "notice": null
+   },
+   "counts": {
+    "total": 75,
+    "validGeometry": 75,
+    "analyzed": 43,
+    "repaired": 0,
+    "excluded": 32,
+    "inside": 39,
+    "partial": 4,
+    "zeroAreaInRadius": 0,
+    "multiPartOverlap": 0,
+    "duplicateGeometry": 0,
+    "relationMismatch": 0,
+    "distanceMismatch": 0
+   },
+   "identifiers": {
+    "bd": 75,
+    "feature": 0,
+    "row": 0,
+    "other": 0
+   },
+   "warnings": [
+    {
+     "code": "OUTSIDE_RADIUS",
+     "message": "반경 원에 닿지 않는 건물은 제외했습니다. 요청의 중심점이나 반경이 분석 결과와 다를 수 있습니다.",
+     "count": 32
+    }
+   ]
+  },
+  "conditions": {
+   "centerDistanceMeters": 0.0,
+   "centerToleranceMeters": 0.05,
+   "sameCenter": true,
+   "sameRadius": true,
+   "sameCriterion": true,
+   "sameDataSource": true,
+   "sameCoordinateSystem": true,
+   "analyzedIntervalSeconds": 15897600.0,
+   "bothComplete": true
+  },
+  "method": {
+   "centerToleranceMeters": 0.05,
+   "featureIouThreshold": 0.5,
+   "candidateIouThreshold": 0.9,
+   "geometryToleranceM2": 0.01,
+   "matchingDescription": "건물은 식별자로만 매칭합니다. bd:(건물관리번호)가 같으면 같은 건물(신뢰도 HIGH), feature:(VWorld 객체 ID)는 ID가 같고 전체 도형 IoU가 0.5 이상일 때만 같은 건물(MEDIUM)로 봅니다. row:는 분석마다 바뀌는 순번이므로 매칭하지 않습니다. 어느 쪽이든 도형을 복구한 건물은 신뢰도를 LOW로 낮추고, 도형이 제외된 건물은 비교하지 않습니다. 매칭되지 않은 건물끼리 IoU 0.9 이상인 쌍은 possibleSameBuilding 후보로만 보고하며, 두 건물 모두 그 쌍이 유일할 때 CANDIDATE, 아니면 AMBIGUOUS입니다. 후보는 추가·삭제·유지 판정에 쓰지 않습니다. 도형 변화(GEOMETRY)는 전체 도형의 대칭차 면적이 0.01m² 이상일 때입니다.",
+   "statisticsDescription": "각 분석의 지표는 building-stats와 같은 계산(같은 투영·도형 복구·반경 판정)의 반올림 전 값입니다. delta = after − before, changeRate = delta / before(before가 0이거나 값이 없으면 null)이며 점유율 변화는 deltaPercentPoint(%p)로도 제공합니다. 반올림은 응답에서만 합니다(면적 0.01m², 비율 1e-6, %p 1e-4).",
+   "analysis": {
+    "projection": "LOCAL_TANGENT_PLANE_WGS84",
+    "projectionDescription": "분석 중심점에 접하는 평면(동쪽 x, 북쪽 y, m)으로 투영합니다. Java PlanarGeometry와 같은 WGS84 곡률반경 공식이며 중심에서 1km 이내 축척 오차는 약 0.01%입니다.",
+    "areaUnit": "m2",
+    "toleranceMeters": 0.001,
+    "circleSegments": 256,
+    "circleArea": 31415.93,
+    "circlePolygonArea": 31412.77,
+    "circleAreaErrorRatio": 0.0001003958,
+    "circleMissingArea": 3.15,
+    "circleMaxRadialGapMeters": 0.0075,
+    "circleDescription": "반경 원은 내접 256각형으로 근사합니다. 다각형 면적은 실제 원보다 0.0100%(3.15m²) 작고, 경계는 최대 0.0075m 안쪽에 있습니다. 근사는 경계에 걸친(PARTIAL) 건물의 교차 면적에만 쓰며, 완전 포함(INSIDE) 건물은 전체 면적을, 점유율 분모는 실제 원 면적 πr²을 사용합니다. 따라서 반경 내 점유 면적(unionArea)은 실제보다 최대 circleMissingArea만큼 작을 수 있고, 원에 조금만 걸친 건물 하나의 교차 면적은 상대적으로 크게 작아질 수 있습니다."
+   }
+  },
+  "statistics": {
+   "basis": "CHANGE",
+   "interpretation": "두 분석 모두 완전한 결과이므로 차이를 VWorld 데이터의 변화로 볼 수 있습니다. 실제 공사 시점과는 다를 수 있습니다.",
+   "buildingCount": {
+    "unit": "count",
+    "before": 58,
+    "after": 43,
+    "delta": -15,
+    "changeRate": -0.258621
+   },
+   "javaBuildingCount": null,
+   "unionArea": {
+    "unit": "m2",
+    "before": 3525.29,
+    "after": 2605.43,
+    "delta": -919.86,
+    "changeRate": -0.260932
+   },
+   "sumArea": {
+    "unit": "m2",
+    "before": 3712.0,
+    "after": 2752.0,
+    "delta": -960.0,
+    "changeRate": -0.258621
+   },
+   "coverageRatio": {
+    "unit": "ratio",
+    "before": 0.112214,
+    "after": 0.082933,
+    "delta": -0.02928,
+    "changeRate": -0.260932,
+    "deltaPercentPoint": -2.928
+   },
+   "averageArea": {
+    "unit": "m2",
+    "before": 64.0,
+    "after": 64.0,
+    "delta": 0.0,
+    "changeRate": 0.0
+   },
+   "averageFloors": {
+    "unit": "floors",
+    "before": 3.0,
+    "after": 3.6,
+    "delta": 0.6,
+    "changeRate": 0.2
+   },
+   "floorsWithData": {
+    "unit": "count",
+    "before": 60,
+    "after": 75,
+    "delta": 15,
+    "changeRate": 0.25
+   }
+  },
+  "buildings": {
+   "summary": {
+    "matched": 43,
+    "unchanged": 0,
+    "modified": 43,
+    "added": 0,
+    "removed": 15,
+    "onlyInAfter": 0,
+    "onlyInBefore": 0,
+    "uncomparableBefore": 2,
+    "uncomparableAfter": 32,
+    "lowConfidence": 0,
+    "candidates": 0,
+    "ambiguousCandidates": 0
+   },
+   "changes": [
+    {
+     "id": "bd:45",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:46",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:47",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:48",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:49",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:50",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:51",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:52",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:53",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 23.86,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:54",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:55",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:56",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:57",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:58",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:59",
+     "status": "REMOVED",
+     "match": null,
+     "changes": [],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": null,
+     "footprintArea": null,
+     "areaInRadius": null,
+     "symmetricDifferenceArea": null,
+     "iou": null,
+     "floors": null
+    },
+    {
+     "id": "bd:0",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:1",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:10",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:11",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:12",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:13",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:14",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:15",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:16",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:18",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:19",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:2",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:20",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:21",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:22",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:23",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:24",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:25",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:26",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 12.13,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 12.13,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 12.13,
+      "after": 12.13,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:27",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:28",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:29",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:3",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:30",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:31",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:32",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:33",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:34",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:35",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 27.73,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 27.73,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 27.73,
+      "after": 27.73,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:36",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:37",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:38",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:39",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:4",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:40",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:41",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:42",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:43",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 4,
+      "after": 5,
+      "delta": 1,
+      "beforeRaw": "4",
+      "afterRaw": "5"
+     }
+    },
+    {
+     "id": "bd:44",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 31.59,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 31.59,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 31.59,
+      "after": 31.59,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    },
+    {
+     "id": "bd:5",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 1,
+      "floorsRaw": "1",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 1,
+      "after": 2,
+      "delta": 1,
+      "beforeRaw": "1",
+      "afterRaw": "2"
+     }
+    },
+    {
+     "id": "bd:6",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 2,
+      "floorsRaw": "2",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 2,
+      "after": 3,
+      "delta": 1,
+      "beforeRaw": "2",
+      "afterRaw": "3"
+     }
+    },
+    {
+     "id": "bd:7",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 37.99,
+      "floors": 3,
+      "floorsRaw": "3",
+      "repaired": false
+     },
+     "after": {
+      "relation": "PARTIAL",
+      "footprintArea": 64.0,
+      "areaInRadius": 37.99,
+      "floors": 4,
+      "floorsRaw": "4",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 37.99,
+      "after": 37.99,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 3,
+      "after": 4,
+      "delta": 1,
+      "beforeRaw": "3",
+      "afterRaw": "4"
+     }
+    },
+    {
+     "id": "bd:9",
+     "status": "MODIFIED",
+     "match": {
+      "basis": "BD_MGT_SN",
+      "confidence": "HIGH",
+      "reasons": []
+     },
+     "changes": [
+      "FLOORS"
+     ],
+     "before": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 5,
+      "floorsRaw": "5",
+      "repaired": false
+     },
+     "after": {
+      "relation": "INSIDE",
+      "footprintArea": 64.0,
+      "areaInRadius": 64.0,
+      "floors": 6,
+      "floorsRaw": "6",
+      "repaired": false
+     },
+     "footprintArea": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "areaInRadius": {
+      "unit": "m2",
+      "before": 64.0,
+      "after": 64.0,
+      "delta": 0.0,
+      "changeRate": 0.0
+     },
+     "symmetricDifferenceArea": 0.0,
+     "iou": 1.0,
+     "floors": {
+      "before": 5,
+      "after": 6,
+      "delta": 1,
+      "beforeRaw": "5",
+      "afterRaw": "6"
+     }
+    }
+   ],
+   "uncomparable": [
+    {
+     "id": "bd:17",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 0.58m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:17",
+     "side": "BEFORE",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 0.58m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:8",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 4.79m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:8",
+     "side": "BEFORE",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 4.79m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x0",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 21.38m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x1",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 19.1m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x10",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 17.61m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x11",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 15.26m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x12",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 12.93m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x13",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 10.63m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x14",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 8.37m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x15",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 15.8m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x16",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 13.41m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x17",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 11.04m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x18",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 8.71m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x19",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 6.4m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x2",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 16.85m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x20",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 14.04m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x21",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 11.61m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x22",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 9.2m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x23",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 6.83m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x24",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 4.48m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x25",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 12.33m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x26",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 9.86m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x27",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 7.42m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x28",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 5.0m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x29",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 2.62m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x3",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 14.63m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x4",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 12.45m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x5",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 19.47m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x6",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 17.15m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x7",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 14.87m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x8",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 12.61m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    },
+    {
+     "id": "bd:x9",
+     "side": "AFTER",
+     "category": "UNCOMPARABLE",
+     "reason": "OUTSIDE_RADIUS",
+     "message": "반경 원에서 10.39m 떨어져 있어 분석에서 제외했습니다. 좌표나 반경이 분석 결과와 맞는지 확인하세요.",
+     "iou": null
+    }
+   ],
+   "possibleSameBuilding": []
+  },
+  "warnings": [
+   {
+    "code": "GEOMETRY_EXCLUDED",
+    "message": "어느 한쪽에서 도형이 제외된 건물은 비교하지 않았습니다(buildings.uncomparable).",
+    "count": 34
+   }
+  ],
+  "notes": [
+   {
+    "targets": [
+     "statistics",
+     "buildings"
+    ],
+    "message": "변화는 두 분석 시점의 VWorld LT_C_SPBD(도로명주소 건물) 데이터 차이입니다. VWorld 데이터 갱신 시점은 실제 신축·철거·증축 시점과 다를 수 있으므로 실제 건물 변경 시점으로 표시하지 마세요."
+   },
+   {
+    "targets": [
+     "buildings.changes"
+    ],
+    "message": "ADDED/REMOVED는 데이터에 건물이 나타나거나 사라졌다는 뜻이며 신축·철거를 확인한 것이 아닙니다. 건물관리번호가 바뀐 건물도 추가와 삭제로 나타날 수 있습니다(possibleSameBuilding 참고)."
+   },
+   {
+    "targets": [
+     "buildings.possibleSameBuilding"
+    ],
+    "message": "도형이 거의 같은 다른 식별자의 건물 쌍입니다. 확정된 대응이 아니며 상태와 통계에 반영하지 않았습니다."
+   },
+   {
+    "targets": [
+     "statistics.unionArea",
+     "statistics.sumArea",
+     "statistics.averageArea"
+    ],
+    "message": "면적은 VWorld 도형의 수평 면적(m²)이며 건축물대장의 건축면적이나 연면적과 다를 수 있습니다."
+   }
+  ]
+ }
+}

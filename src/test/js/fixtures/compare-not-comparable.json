@@ -1,0 +1,160 @@
+{
+ "analysisIds": [
+  12,
+  30
+ ],
+ "analysisService": {
+  "schemaVersion": 1
+ },
+ "result": {
+  "schemaVersion": 1,
+  "comparable": false,
+  "comparisonBasis": "CHANGE",
+  "notComparableReasons": [
+   {
+    "code": "CENTER_DIFFERENT",
+    "message": "분석 중심점이 5.0m 떨어져 있습니다(허용 0.05m). 중심이 다른 분석은 직접 비교하지 않습니다."
+   },
+   {
+    "code": "RADIUS_DIFFERENT",
+    "message": "분석 반경이 다릅니다(100m, 200m)."
+   }
+  ],
+  "before": {
+   "source": {
+    "kind": "SAVED",
+    "analysisId": 1,
+    "analyzedAt": "2026-03-01T09:00:00Z"
+   },
+   "center": {
+    "lon": 127.0,
+    "lat": 37.5
+   },
+   "radiusMeters": 100,
+   "complete": true,
+   "incompleteReasons": [],
+   "criterion": "POLYGON_INTERSECTS_CIRCLE",
+   "dataSource": {
+    "provider": "VWorld 2D 데이터 API",
+    "layer": "LT_C_SPBD (도로명주소 건물)",
+    "coordinateSystem": "EPSG:4326 (WGS84 경위도)",
+    "notice": null
+   },
+   "counts": {
+    "total": 1,
+    "validGeometry": 1,
+    "analyzed": 1,
+    "repaired": 0,
+    "excluded": 0,
+    "inside": 1,
+    "partial": 0,
+    "zeroAreaInRadius": 0,
+    "multiPartOverlap": 0,
+    "duplicateGeometry": 0,
+    "relationMismatch": 0,
+    "distanceMismatch": 0
+   },
+   "identifiers": {
+    "bd": 1,
+    "feature": 0,
+    "row": 0,
+    "other": 0
+   },
+   "warnings": []
+  },
+  "after": {
+   "source": {
+    "kind": "SAVED",
+    "analysisId": 2,
+    "analyzedAt": "2026-09-01T09:00:00Z"
+   },
+   "center": {
+    "lon": 127.0000565448107,
+    "lat": 37.5
+   },
+   "radiusMeters": 200,
+   "complete": true,
+   "incompleteReasons": [],
+   "criterion": "POLYGON_INTERSECTS_CIRCLE",
+   "dataSource": {
+    "provider": "VWorld 2D 데이터 API",
+    "layer": "LT_C_SPBD (도로명주소 건물)",
+    "coordinateSystem": "EPSG:4326 (WGS84 경위도)",
+    "notice": null
+   },
+   "counts": {
+    "total": 1,
+    "validGeometry": 1,
+    "analyzed": 1,
+    "repaired": 0,
+    "excluded": 0,
+    "inside": 1,
+    "partial": 0,
+    "zeroAreaInRadius": 0,
+    "multiPartOverlap": 0,
+    "duplicateGeometry": 0,
+    "relationMismatch": 0,
+    "distanceMismatch": 0
+   },
+   "identifiers": {
+    "bd": 1,
+    "feature": 0,
+    "row": 0,
+    "other": 0
+   },
+   "warnings": []
+  },
+  "conditions": {
+   "centerDistanceMeters": 5.0,
+   "centerToleranceMeters": 0.05,
+   "sameCenter": false,
+   "sameRadius": false,
+   "sameCriterion": true,
+   "sameDataSource": true,
+   "sameCoordinateSystem": true,
+   "analyzedIntervalSeconds": 15897600.0,
+   "bothComplete": true
+  },
+  "method": {
+   "centerToleranceMeters": 0.05,
+   "featureIouThreshold": 0.5,
+   "candidateIouThreshold": 0.9,
+   "geometryToleranceM2": 0.01,
+   "matchingDescription": "건물은 식별자로만 매칭합니다. bd:(건물관리번호)가 같으면 같은 건물(신뢰도 HIGH), feature:(VWorld 객체 ID)는 ID가 같고 전체 도형 IoU가 0.5 이상일 때만 같은 건물(MEDIUM)로 봅니다. row:는 분석마다 바뀌는 순번이므로 매칭하지 않습니다. 어느 쪽이든 도형을 복구한 건물은 신뢰도를 LOW로 낮추고, 도형이 제외된 건물은 비교하지 않습니다. 매칭되지 않은 건물끼리 IoU 0.9 이상인 쌍은 possibleSameBuilding 후보로만 보고하며, 두 건물 모두 그 쌍이 유일할 때 CANDIDATE, 아니면 AMBIGUOUS입니다. 후보는 추가·삭제·유지 판정에 쓰지 않습니다. 도형 변화(GEOMETRY)는 전체 도형의 대칭차 면적이 0.01m² 이상일 때입니다.",
+   "statisticsDescription": "각 분석의 지표는 building-stats와 같은 계산(같은 투영·도형 복구·반경 판정)의 반올림 전 값입니다. delta = after − before, changeRate = delta / before(before가 0이거나 값이 없으면 null)이며 점유율 변화는 deltaPercentPoint(%p)로도 제공합니다. 반올림은 응답에서만 합니다(면적 0.01m², 비율 1e-6, %p 1e-4).",
+   "analysis": null
+  },
+  "statistics": null,
+  "buildings": null,
+  "warnings": [],
+  "notes": [
+   {
+    "targets": [
+     "statistics",
+     "buildings"
+    ],
+    "message": "변화는 두 분석 시점의 VWorld LT_C_SPBD(도로명주소 건물) 데이터 차이입니다. VWorld 데이터 갱신 시점은 실제 신축·철거·증축 시점과 다를 수 있으므로 실제 건물 변경 시점으로 표시하지 마세요."
+   },
+   {
+    "targets": [
+     "buildings.changes"
+    ],
+    "message": "ADDED/REMOVED는 데이터에 건물이 나타나거나 사라졌다는 뜻이며 신축·철거를 확인한 것이 아닙니다. 건물관리번호가 바뀐 건물도 추가와 삭제로 나타날 수 있습니다(possibleSameBuilding 참고)."
+   },
+   {
+    "targets": [
+     "buildings.possibleSameBuilding"
+    ],
+    "message": "도형이 거의 같은 다른 식별자의 건물 쌍입니다. 확정된 대응이 아니며 상태와 통계에 반영하지 않았습니다."
+   },
+   {
+    "targets": [
+     "statistics.unionArea",
+     "statistics.sumArea",
+     "statistics.averageArea"
+    ],
+    "message": "면적은 VWorld 도형의 수평 면적(m²)이며 건축물대장의 건축면적이나 연면적과 다를 수 있습니다."
+   }
+  ]
+ }
+}
