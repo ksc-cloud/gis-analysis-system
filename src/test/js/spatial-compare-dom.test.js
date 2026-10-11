@@ -1,6 +1,6 @@
 // node --test "src/test/js/*.test.js"  (Node.js 내장 테스트 러너, npm 패키지 없음)
-// The browser modules together, as index.jsp loads them: map-history.js -> spatial-api.js -> spatial-dashboard.js
-// -> spatial-compare.js, run in a vm sandbox with a minimal fake DOM (elements by id, textContent, attributes,
+// The browser modules together, as index.jsp loads them: map-history.js -> spatial-api.js -> spatial-views.js
+// -> spatial-dashboard.js -> spatial-compare.js, run in a vm sandbox with a minimal fake DOM (elements by id, textContent, attributes,
 // events) and a fake Java API. map-analysis.js is replaced by a small window.gisAnalysis stub.
 'use strict';
 
@@ -227,6 +227,7 @@ function page(options = {}) {
 	};
 	load('map-history.js', { 'data-api-url': '/api/analyses' });
 	load('spatial-api.js');
+	load('spatial-views.js');
 	load('spatial-dashboard.js', { 'data-api-base': '/api' });
 	load('spatial-compare.js', { 'data-api-base': '/api' });
 	return {
@@ -456,6 +457,45 @@ test('comparison errors stay in the compare view', async () => {
 	// The statistics view and the history list are untouched.
 	assert.equal(p.el('spatial-result').hidden, true);
 	assert.equal(p.el('history-list').children.length, 2);
+});
+
+test('view buttons and "compare" send one view event each (no second binding in the compare module)', async () => {
+	const p = page();
+	await settle();
+	const views = [];
+	p.window.document.addEventListener('gis:spatialviewchange', (event) => views.push(event.detail.view));
+	p.el('spatial-view-button-compare').click();
+	p.el('spatial-view-button-stats').click();
+	assert.deepEqual(views, ['compare', 'stats']);
+
+	await p.openHistory();
+	p.toggle(15);
+	p.toggle(12);
+	p.el('history-compare-run').click();
+	await settle();
+	assert.deepEqual(views, ['compare', 'stats', 'compare']);
+	assert.equal(p.window.gisSpatialViews.current(), 'compare');
+	assert.equal(p.el('spatial-view-compare').hidden, false);
+});
+
+test('gisCompare.showView still works and goes through gisSpatialViews', async () => {
+	const p = page();
+	await settle();
+	const views = [];
+	p.window.document.addEventListener('gis:spatialviewchange', (event) => views.push(event.detail.view));
+	assert.equal(typeof p.window.gisCompare.showView, 'function');
+
+	p.window.gisCompare.showView('grid');
+	assert.equal(p.window.gisSpatialViews.current(), 'grid');
+	assert.equal(p.el('spatial-view-grid').hidden, false);
+	assert.equal(p.el('spatial-view-stats').hidden, true);
+	assert.equal(p.el('spatial-view-compare').hidden, true);
+
+	p.window.gisCompare.showView('unknown');
+	assert.equal(p.window.gisSpatialViews.current(), 'stats');
+	assert.equal(p.el('spatial-view-stats').hidden, false);
+	assert.equal(p.el('spatial-view-button-stats').getAttribute('aria-pressed'), 'true');
+	assert.deepEqual(views, ['grid', 'stats']);
 });
 
 test('the include-unchanged option re-requests the comparison', async () => {

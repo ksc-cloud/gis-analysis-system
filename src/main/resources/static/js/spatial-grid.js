@@ -655,8 +655,8 @@
 				if (win.gisLayout && typeof win.gisLayout.isMobile === 'function' && win.gisLayout.isMobile()) {
 					return;
 				}
-				if (win.gisCompare && typeof win.gisCompare.showView === 'function') {
-					win.gisCompare.showView('grid');
+				if (win.gisSpatialViews && typeof win.gisSpatialViews.show === 'function') {
+					win.gisSpatialViews.show('grid');
 				}
 				if (analysis && typeof analysis.openInfoPanel === 'function') {
 					analysis.openInfoPanel('spatial');

@@ -1,6 +1,6 @@
 // node --test "src/test/js/*.test.js"  (Node.js 내장 테스트 러너, npm 패키지 없음)
-// The grid view in the page: spatial-api.js -> spatial-dashboard.js -> spatial-compare.js -> spatial-grid-renderer.js
-// -> spatial-grid.js, as index.jsp loads them, in a vm sandbox with a minimal fake DOM, a fake VWorld map and a fake
+// The grid view in the page: spatial-api.js -> spatial-views.js -> spatial-dashboard.js -> spatial-compare.js
+// -> spatial-grid-renderer.js -> spatial-grid.js, as index.jsp loads them, in a vm sandbox with a minimal fake DOM, a fake VWorld map and a fake
 // Java API. map-analysis.js is replaced by a stub. Real VWorld rendering is checked in the browser (8-6B-2d).
 'use strict';
 
@@ -192,6 +192,7 @@ function page(options = {}) {
 		vm.runInContext(fs.readFileSync(path.join(JS, file), 'utf8'), context, { filename: file });
 	};
 	load('spatial-api.js');
+	load('spatial-views.js');
 	load('spatial-dashboard.js', true);
 	load('spatial-compare.js', true);
 	load('spatial-grid-renderer.js');
@@ -383,6 +384,35 @@ test('integrity problems and partial results are explained', async () => {
 	assert.equal(p.el('grid-notices').hidden, false);
 	assert.match(p.el('grid-notices').textContent, /올바르지 않은 셀 1개/);
 	assert.match(p.el('grid-notices').textContent, /부분 조회 결과/);
+});
+
+test('cell click opens the grid view through gisSpatialViews, also without the compare module', async () => {
+	const p = page({ mode: 'radius' });
+	await settle();
+	await p.toggleDisplay(true);
+	p.el('spatial-view-button-compare').click();
+	// Not delete: a global set inside the vm context stays on the context's own global object.
+	p.window.gisCompare = undefined;
+	const views = [];
+	p.window.document.addEventListener('gis:spatialviewchange', (event) => views.push(event.detail.view));
+	p.onMap()[0].listener();
+	await settle();
+
+	assert.deepEqual(views, ['grid']);
+	assert.equal(p.window.gisSpatialViews.current(), 'grid');
+	assert.equal(p.el('spatial-view-grid').hidden, false);
+	assert.equal(p.el('spatial-view-compare').hidden, true);
+	assert.equal(p.el('spatial-view-button-grid').getAttribute('aria-pressed'), 'true');
+	assert.equal(p.el('grid-detail').hidden, false);
+});
+
+test('each view button click sends exactly one view event with all modules loaded', async () => {
+	const p = page();
+	await settle();
+	const views = [];
+	p.window.document.addEventListener('gis:spatialviewchange', (event) => views.push(event.detail.view));
+	['grid', 'compare', 'stats', 'stats'].forEach((name) => p.el('spatial-view-button-' + name).click());
+	assert.deepEqual(views, ['grid', 'compare', 'stats', 'stats']);
 });
 
 test('without an analysis the grid controls are disabled', async () => {

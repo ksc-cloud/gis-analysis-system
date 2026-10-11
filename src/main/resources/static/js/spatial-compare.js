@@ -557,12 +557,7 @@
 			historyText: $('history-compare-text'),
 			historyRun: $('history-compare-run'),
 			historyClear: $('history-compare-clear'),
-			viewStats: $('spatial-view-stats'),
 			viewCompare: $('spatial-view-compare'),
-			viewGrid: $('spatial-view-grid'),
-			buttonGrid: $('spatial-view-button-grid'),
-			buttonStats: $('spatial-view-button-stats'),
-			buttonCompare: $('spatial-view-button-compare'),
 			empty: $('compare-empty'),
 			selection: $('compare-selection'),
 			run: $('compare-run'),
@@ -610,21 +605,13 @@
 			return analysis && analysis.formatDateTime ? analysis.formatDateTime(iso) : text(iso);
 		}
 
-		/* ---- 보기 전환 (통계 / 격자 / 비교). 격자 보기의 내용은 spatial-grid.js가 그린다. ---- */
+		/* ---- 보기 전환은 spatial-views.js(window.gisSpatialViews)가 맡는다. 부를 때 찾으므로 로드 순서에 묶이지 않는다. ---- */
 
-		var currentView = 'stats';
-
-		function setView(name) {
-			currentView = name === 'compare' || (name === 'grid' && el.viewGrid) ? name : 'stats';
-			show(el.viewStats, currentView === 'stats');
-			show(el.viewGrid, currentView === 'grid');
-			show(el.viewCompare, currentView === 'compare');
-			[el.buttonStats, el.buttonGrid, el.buttonCompare].forEach(function (button) {
-				if (button) {
-					button.setAttribute('aria-pressed', String(button.getAttribute('data-view') === currentView));
-				}
-			});
-			doc.dispatchEvent(new win.CustomEvent('gis:spatialviewchange', { detail: { view: currentView } }));
+		function showView(name) {
+			var views = win.gisSpatialViews;
+			if (views && typeof views.show === 'function') {
+				views.show(name);
+			}
 		}
 
 		/* ---- 결과 그리기 ---- */
@@ -893,20 +880,13 @@
 		});
 
 		function openCompare() {
-			setView('compare');
+			showView('compare');
 			if (analysis && analysis.openInfoPanel) {
 				analysis.openInfoPanel('spatial');
 			}
 			controller.run();
 		}
 
-		[el.buttonStats, el.buttonGrid, el.buttonCompare].forEach(function (button) {
-			if (button) {
-				button.addEventListener('click', function () {
-					setView(button.getAttribute('data-view'));
-				});
-			}
-		});
 		el.historyRun.addEventListener('click', openCompare);
 		el.run.addEventListener('click', function () {
 			controller.run();
@@ -946,7 +926,7 @@
 			canSelect: controller.canSelect,
 			clearSelection: controller.clearSelection,
 			getState: controller.getState,
-			showView: setView
+			showView: showView // 호환용: window.gisSpatialViews.show에 넘긴다.
 		};
 	}
 

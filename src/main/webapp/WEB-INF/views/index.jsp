@@ -347,7 +347,8 @@
 			</p>
 		</section>
 
-		<%-- 공간 분석: 공간 통계(8-6A, spatial-dashboard.js), 격자 밀집도(8-6B, spatial-grid.js), 저장된 분석 비교(8-6C, spatial-compare.js) --%>
+		<%-- 공간 분석: 공간 통계(8-6A, spatial-dashboard.js), 격자 밀집도(8-6B, spatial-grid.js), 저장된 분석 비교(8-6C, spatial-compare.js).
+			 보기 전환은 spatial-views.js가 맡는다(id="spatial-view-{name}" 패널과 id="spatial-view-button-{name}" 버튼). --%>
 		<section class="panel-section spatial" id="spatial-section" data-state="empty" role="tabpanel"
 				 aria-labelledby="spatial-title" hidden>
 			<div class="building__header">
@@ -479,6 +480,8 @@
 	<%-- 공간 분석(공간 통계, 분석 서버 상태): Java의 /api/spatial-analysis, /api/analysis-snapshots, /api/analyses/{id}/statistics만
 		 호출한다. gis:analysisresult와 gis:analysissaved를 놓치지 않도록 map-history.js 다음, vworld-map.js 전에 로드한다. --%>
 	<script src="${pageContext.request.contextPath}/js/spatial-api.js"></script>
+	<%-- 공간 분석 탭의 보기 전환(통계 / 격자 / 비교, window.gisSpatialViews). 각 보기 모듈보다 먼저 로드한다. --%>
+	<script src="${pageContext.request.contextPath}/js/spatial-views.js"></script>
 	<script src="${pageContext.request.contextPath}/js/spatial-dashboard.js"
 			data-api-base="${pageContext.request.contextPath}/api"></script>
 	<%-- 저장된 분석 비교: GET /api/analyses/{id}/comparison?with={otherId}. 분석 이력의 "비교 선택"과 공간 분석 탭의 비교 보기 --%>

@@ -12,7 +12,7 @@
  *   다시 확인한다. 주기적으로 확인하지 않는다. 사용할 수 없으면 통계만 안내하고 다른 기능에는 영향을 주지 않는다.
  * - 오류가 나도 지도와 반경 분석 결과는 건드리지 않는다. 외부 문자열은 textContent로만 넣는다.
  * - 상태 관리(createController)와 화면 값 계산(buildView, kpis)은 DOM 없이 동작해 node --test로 검사한다.
- * - 공간 분석 탭에는 통계·격자·비교 보기가 있다(보기 전환: spatial-compare.js, 'gis:spatialviewchange').
+ * - 공간 분석 탭에는 통계·격자·비교 보기가 있다(보기 전환: spatial-views.js, 'gis:spatialviewchange').
  *   통계는 통계 보기가 보일 때만 요청한다. 분석 서버 상태가 바뀌면 'gis:spatialstatus' { state }를 보낸다.
  */
 (function (factory) {
