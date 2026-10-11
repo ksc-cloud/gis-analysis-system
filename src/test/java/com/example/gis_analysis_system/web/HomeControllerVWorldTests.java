@@ -167,4 +167,45 @@ class HomeControllerVWorldTests {
 			.contains("id=\"radius-open-results\"");
 	}
 
+	@Test
+	void homeRendersTheSpatialAnalysisTabAndLoadsItsScriptsAfterTheHistoryScript() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		assertThat(body).contains("id=\"tab-spatial\" role=\"tab\" aria-selected=\"false\"")
+			.contains("aria-controls=\"spatial-section\" tabindex=\"-1\">공간 분석</button>")
+			.contains("id=\"spatial-section\" data-state=\"empty\" role=\"tabpanel\"")
+			.contains("id=\"spatial-service\" data-state=\"checking\"")
+			.contains("id=\"spatial-service-badge\">확인 중</span>")
+			.contains("id=\"spatial-service-recheck\">다시 확인</button>")
+			.contains("id=\"spatial-empty\"")
+			.contains("id=\"spatial-status\" role=\"status\" aria-live=\"polite\" hidden")
+			.contains("id=\"spatial-retry\" hidden")
+			.contains("id=\"spatial-result\" hidden")
+			.contains("id=\"spatial-kpis\"")
+			.contains("id=\"spatial-completeness\"")
+			.contains("id=\"spatial-warnings\" hidden")
+			.contains("<button type=\"button\" class=\"spatial-views__button\" aria-pressed=\"true\">통계</button>")
+			.contains("data-api-base=\"/api\"");
+		// Grid and comparison are announced but cannot be used yet (steps 8-6B and 8-6C).
+		assertThat(body.split("class=\"spatial-views__button\" aria-pressed=\"false\" disabled", -1)).hasSize(3);
+		assertThat(body).contains(">격자 <span class=\"spatial-views__soon\">준비 중</span>")
+			.contains(">비교 <span class=\"spatial-views__soon\">준비 중</span>");
+
+		int analysisScript = body.indexOf("/js/map-analysis.js");
+		int historyScript = body.indexOf("/js/map-history.js");
+		int apiScript = body.indexOf("/js/spatial-api.js");
+		int dashboardScript = body.indexOf("/js/spatial-dashboard.js");
+		int mapScript = body.indexOf("/js/vworld-map.js");
+		// spatial-dashboard.js uses window.gisSpatialApi and window.gisAnalysis, and must not miss
+		// gis:analysisresult / gis:analysissaved, so it follows the analysis and history scripts.
+		assertThat(historyScript).isGreaterThan(analysisScript);
+		assertThat(apiScript).isGreaterThan(historyScript);
+		assertThat(dashboardScript).isGreaterThan(apiScript);
+		assertThat(mapScript).isGreaterThan(dashboardScript);
+		// The browser only talks to Java: no Python address, internal path or token header on the page.
+		assertThat(body).doesNotContain("8001").doesNotContain("/internal/").doesNotContain("X-Internal-Token")
+			.doesNotContain("ANALYSIS_INTERNAL_TOKEN");
+	}
+
 }

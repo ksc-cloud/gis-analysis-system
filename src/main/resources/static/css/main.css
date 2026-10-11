@@ -1598,6 +1598,213 @@ body {
 	}
 }
 
+/* ---------- 공간 분석 탭 (8-6A: 공간 통계, 분석 서버 상태) ---------- */
+
+/* 탭 4개가 좁은 정보 패널(280px)에서도 한 줄에 들어가게 한다. */
+.info-tabs__tab {
+	min-width: 0;
+	padding: 0 4px;
+	white-space: nowrap;
+}
+
+.spatial[hidden],
+.spatial__status[hidden],
+.spatial__result[hidden],
+.spatial__warnings[hidden],
+.spatial .analysis__subtitle[hidden],
+.spatial .empty-state[hidden],
+.spatial .building-status__retry[hidden] {
+	display: none;
+}
+
+.spatial-views {
+	display: flex;
+	gap: 4px;
+	margin-bottom: 12px;
+	padding: 3px;
+	border-radius: var(--radius);
+	background: #f1f4f8;
+}
+
+.spatial-views__button {
+	flex: 1;
+	min-width: 0;
+	height: 30px;
+	border: none;
+	border-radius: 4px;
+	background: none;
+	color: var(--color-text-muted);
+	font: inherit;
+	font-size: 12px;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+.spatial-views__button[aria-pressed="true"] {
+	background: var(--color-panel-bg);
+	color: var(--color-accent);
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+	cursor: default;
+}
+
+.spatial-views__button:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.spatial-views__soon {
+	font-size: 10px;
+}
+
+.spatial-service {
+	margin: 0 0 12px;
+	padding: 8px 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	font-size: 12px;
+}
+
+.spatial-service__row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.spatial-service__label {
+	color: var(--color-text-muted);
+}
+
+.spatial-service__badge {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #eef1f5;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.spatial-service__row .building__clear {
+	margin-left: auto;
+}
+
+.spatial-service__text {
+	margin: 6px 0 0;
+	color: var(--color-text-muted);
+}
+
+.spatial-service[data-state="available"] .spatial-service__badge {
+	background: #e7f6ec;
+	color: #157f3c;
+}
+
+.spatial-service[data-state="unavailable"] .spatial-service__badge,
+.spatial-service[data-state="error"] .spatial-service__badge {
+	background: #fdecec;
+	color: #b42318;
+}
+
+.spatial-service[data-state="not-configured"] .spatial-service__badge {
+	background: #fff7e6;
+	color: #9a6700;
+}
+
+.spatial__status {
+	margin: 0 0 12px;
+	font-size: 13px;
+}
+
+.spatial__status.is-error {
+	color: #b42318;
+}
+
+.spatial .building-status__retry {
+	width: 100%;
+	margin-bottom: 12px;
+}
+
+.spatial__source {
+	margin: 0 0 8px;
+	font-size: 12px;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.spatial__completeness-text {
+	margin: 4px 0 0;
+}
+
+.spatial-kpis {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 8px;
+	margin: 12px 0;
+}
+
+.spatial-kpi {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+	padding: 10px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--radius);
+	background: #f8fafc;
+}
+
+.spatial-kpi__label {
+	color: var(--color-text-muted);
+	font-size: 11px;
+}
+
+.spatial-kpi__value {
+	font-size: 16px;
+	font-weight: 700;
+	line-height: 1.3;
+	font-variant-numeric: tabular-nums;
+	overflow-wrap: anywhere;
+}
+
+.spatial-kpi__note {
+	color: var(--color-text-muted);
+	font-size: 11px;
+	overflow-wrap: anywhere;
+}
+
+.spatial__warnings {
+	margin: 0 0 12px;
+	padding-left: 18px;
+	font-size: 12px;
+}
+
+.spatial__warnings li + li {
+	margin-top: 4px;
+}
+
+@media (max-width: 1200px) {
+	.info-tabs__tab {
+		font-size: 12px;
+	}
+}
+
+/* 작은 화면: 터치하기 쉬운 크기 (KPI는 2열 유지) */
+@media (max-width: 900px) {
+	.spatial-views__button,
+	.spatial-service__row .building__clear,
+	.spatial .building-status__retry {
+		min-height: 44px;
+	}
+}
+
+@media (max-width: 600px) {
+	.spatial-kpi {
+		padding: 8px;
+	}
+
+	.spatial-kpi__value {
+		font-size: 15px;
+	}
+}
+
 /* ---------- 반응형 ---------- */
 
 @media (max-width: 1200px) {

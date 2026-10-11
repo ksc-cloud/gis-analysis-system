@@ -207,6 +207,8 @@
 					aria-controls="analysis-section" tabindex="-1">반경 분석</button>
 			<button type="button" class="info-tabs__tab" id="tab-history" role="tab" aria-selected="false"
 					aria-controls="history-section" tabindex="-1">분석 이력</button>
+			<button type="button" class="info-tabs__tab" id="tab-spatial" role="tab" aria-selected="false"
+					aria-controls="spatial-section" tabindex="-1">공간 분석</button>
 		</div>
 		<section class="panel-section building" id="building-section" data-state="empty" role="tabpanel"
 				 aria-labelledby="building-title">
@@ -336,6 +338,48 @@
 				저장된 분석은 저장 시점의 VWorld 데이터입니다. "지도에서 보기"는 VWorld를 다시 조회하지 않습니다.
 			</p>
 		</section>
+
+		<%-- 공간 분석: 공간 통계(8-6A). 격자와 비교는 다음 단계에서 제공한다. (spatial-dashboard.js) --%>
+		<section class="panel-section spatial" id="spatial-section" data-state="empty" role="tabpanel"
+				 aria-labelledby="spatial-title" hidden>
+			<div class="building__header">
+				<h2 class="panel-section__title" id="spatial-title">공간 분석</h2>
+			</div>
+			<div class="spatial-views" role="group" aria-label="공간 분석 화면">
+				<button type="button" class="spatial-views__button" aria-pressed="true">통계</button>
+				<button type="button" class="spatial-views__button" aria-pressed="false" disabled
+						title="다음 단계에서 제공할 예정입니다.">격자 <span class="spatial-views__soon">준비 중</span></button>
+				<button type="button" class="spatial-views__button" aria-pressed="false" disabled
+						title="다음 단계에서 제공할 예정입니다.">비교 <span class="spatial-views__soon">준비 중</span></button>
+			</div>
+			<div class="spatial-service" id="spatial-service" data-state="checking">
+				<div class="spatial-service__row">
+					<span class="spatial-service__label">분석 서버</span>
+					<span class="spatial-service__badge" id="spatial-service-badge">확인 중</span>
+					<button type="button" class="building__clear" id="spatial-service-recheck">다시 확인</button>
+				</div>
+				<p class="spatial-service__text" id="spatial-service-text" role="status" aria-live="polite">
+					공간 분석 서버 상태를 확인하고 있습니다...
+				</p>
+			</div>
+			<p class="empty-state" id="spatial-empty">
+				분석 결과가 없습니다.<br>
+				반경 분석을 실행하거나 분석 이력에서 저장된 분석을 열면 공간 통계를 계산합니다.
+			</p>
+			<p class="spatial__status" id="spatial-status" role="status" aria-live="polite" hidden></p>
+			<button type="button" class="building-status__retry" id="spatial-retry" hidden>다시 시도</button>
+			<div class="spatial__result" id="spatial-result" hidden>
+				<p class="spatial__source" id="spatial-source"></p>
+				<div class="analysis__completeness" id="spatial-completeness"></div>
+				<div class="spatial-kpis" id="spatial-kpis"></div>
+				<h3 class="analysis__subtitle" id="spatial-warnings-title" hidden>분석 경고</h3>
+				<ul class="spatial__warnings" id="spatial-warnings" hidden></ul>
+				<p class="panel-hint" id="spatial-notice">
+					면적은 VWorld 도로명주소 건물 도형의 수평 면적(m²)이며 건축물대장의 건축면적과 다를 수 있습니다.
+					점유율은 반경 원 면적에 대한 건물 점유 면적의 비율(%)입니다.
+				</p>
+			</div>
+		</section>
 	</aside>
 
 	<div class="overlay" id="panel-overlay" hidden></div>
@@ -358,6 +402,11 @@
 	<%-- 분석 결과 저장, 분석 이력(목록/다시 보기/삭제): /api/analyses 통신 담당 --%>
 	<script src="${pageContext.request.contextPath}/js/map-history.js"
 			data-api-url="${pageContext.request.contextPath}/api/analyses"></script>
+	<%-- 공간 분석(공간 통계, 분석 서버 상태): Java의 /api/spatial-analysis, /api/analysis-snapshots, /api/analyses/{id}/statistics만
+		 호출한다. gis:analysisresult와 gis:analysissaved를 놓치지 않도록 map-history.js 다음, vworld-map.js 전에 로드한다. --%>
+	<script src="${pageContext.request.contextPath}/js/spatial-api.js"></script>
+	<script src="${pageContext.request.contextPath}/js/spatial-dashboard.js"
+			data-api-base="${pageContext.request.contextPath}/api"></script>
 	<%-- 지도 검색: /api/search 통신, 검색 위치 마커, "이 위치로 반경 분석"(window.gisAnalysis.startAt) --%>
 	<script src="${pageContext.request.contextPath}/js/map-search.js"
 			data-api-url="${pageContext.request.contextPath}/api/search"></script>

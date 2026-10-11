@@ -11,6 +11,7 @@
  * - 같은 결과 화면으로 저장된 분석(GET /api/analyses/{id}의 result)도 보여 준다. (7단계, showSaved)
  *   저장본은 보라/분홍 도형, "저장된 분석" 문구와 안내 띠, 지도 위 표시 막대로 실시간 결과와 구분한다.
  * - 결과가 바뀔 때마다 'gis:analysisresult' 이벤트를 보낸다. (저장/이력 API 통신은 map-history.js 담당)
+ * - 정보 패널의 "공간 분석" 탭 전환도 여기서 한다. 탭 내용(공간 통계)은 spatial-dashboard.js가 그린다.
  * - 지도 위 공통 패널(#tool-bar)의 접기/펼치기는 map-tools.js가 관리한다. 이 파일은 반경 분석 요약 문구를
  *   'gis:toolbarsummary' 이벤트로 보내고, 검색의 "이 위치로 반경 분석"과 저장본의 "같은 범위로 다시 분석"에서만
  *   window.gisTools.setCollapsed(false)로 패널을 펼친다.
@@ -42,8 +43,10 @@
 		tabBuilding: document.getElementById('tab-building'),
 		tabAnalysis: document.getElementById('tab-analysis'),
 		tabHistory: document.getElementById('tab-history'),
+		tabSpatial: document.getElementById('tab-spatial'),
 		buildingSection: document.getElementById('building-section'),
 		historySection: document.getElementById('history-section'),
+		spatialSection: document.getElementById('spatial-section'),
 		kind: document.getElementById('analysis-kind'),
 		savedBanner: document.getElementById('analysis-saved-banner'),
 		savedTitle: document.getElementById('analysis-saved-title'),
@@ -149,16 +152,19 @@
 
 	/* ---------- 탭 ---------- */
 
-	var TABS = ['building', 'analysis', 'history'];
+	var TABS = ['building', 'analysis', 'history', 'spatial'];
 
 	function tabParts(name) {
 		if (name === 'building') {
 			return [el.tabBuilding, el.buildingSection];
 		}
+		if (name === 'spatial') {
+			return [el.tabSpatial, el.spatialSection];
+		}
 		return name === 'history' ? [el.tabHistory, el.historySection] : [el.tabAnalysis, el.section];
 	}
 
-	// 건물 정보 / 반경 분석 / 분석 이력 탭. 선택된 탭의 패널만 보이고, 'gis:tabchange'로 알린다.
+	// 건물 정보 / 반경 분석 / 분석 이력 / 공간 분석 탭. 선택된 탭의 패널만 보이고, 'gis:tabchange'로 알린다.
 	function showTab(name) {
 		if (TABS.indexOf(name) < 0 || !tabParts(name)[1]) {
 			name = 'analysis';
@@ -310,6 +316,7 @@
 			generation: state.generation,
 			source: result ? state.source : null,
 			analysisToken: result && !saved ? result.analysisToken || null : null,
+			snapshotExpiresAt: result && !saved ? result.snapshotExpiresAt || null : null,
 			analyzedAt: result ? (saved ? state.saved.analyzedAt : result.analyzedAt || null) : null,
 			analysisId: saved ? state.saved.analysisId : null,
 			title: saved ? state.saved.title : null,
@@ -976,6 +983,11 @@
 	if (el.tabHistory) {
 		el.tabHistory.addEventListener('click', function () {
 			showTab('history');
+		});
+	}
+	if (el.tabSpatial) {
+		el.tabSpatial.addEventListener('click', function () {
+			showTab('spatial');
 		});
 	}
 	// 건물 정보 패널(building-info.js)을 수정하지 않고, 건물이 선택되면 건물 정보 탭으로 전환한다.

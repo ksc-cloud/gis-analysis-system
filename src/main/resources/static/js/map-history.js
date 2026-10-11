@@ -8,6 +8,8 @@
  *   DELETE /api/analyses/{id}
  * - 결과 표시는 map-analysis.js(window.gisAnalysis)의 화면을 그대로 쓴다. (showSaved / clearSaved / showTab)
  * - 'gis:analysisresult' 이벤트로 현재 결과를 받아 저장 폼을 연다. 실시간 결과일 때만 저장할 수 있다.
+ * - 저장되면(이미 저장된 경우 포함) 서버가 스냅샷 토큰을 지우므로 'gis:analysissaved' 이벤트
+ *   { generation, analysisId, title }를 보내 공간 통계(spatial-dashboard.js)가 저장된 분석 ID로 전환하게 한다.
  * - 저장 요청은 취소하지 않는다. 요청 중에 새 분석이 시작되어도 서버 저장은 끝까지 진행하고(이력 유실 방지),
  *   응답은 그 요청을 보낸 결과(generation)가 아직 화면에 있을 때만 저장 폼에 반영한다.
  * - 서버 연결 실패(fetch 실패)와 DB 연결 실패(503 DB_UNAVAILABLE)를 구분해 안내한다.
@@ -248,6 +250,11 @@
 			var storedId = res.ok && res.body ? res.body.analysisId : (code === 'ALREADY_SAVED' && res.body ? res.body.analysisId : null);
 			if (res.ok || code === 'ALREADY_SAVED') {
 				markHistoryStale(storedId);
+				if (storedId != null) {
+					document.dispatchEvent(new CustomEvent('gis:analysissaved', {
+						detail: { generation: target.generation, analysisId: storedId, title: res.ok ? target.title : null }
+					}));
+				}
 			}
 			if (!stillShown) {
 				// 저장 요청 중 다른 결과로 바뀌었다: 새 결과의 폼은 건드리지 않고 이력 탭에만 알린다.

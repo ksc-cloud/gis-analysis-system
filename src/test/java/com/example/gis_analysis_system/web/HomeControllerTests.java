@@ -8,6 +8,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -149,6 +150,30 @@ class HomeControllerTests {
 		// Without a key the map scripts are not loaded, so the search form stays disabled.
 		assertThat(get("/").body()).doesNotContain("map-search.js")
 			.contains("id=\"map-search-input\" class=\"search-form__input\"");
+	}
+
+	@Test
+	void spatialScriptsAreServedButNotLoadedWithoutApiKey() throws Exception {
+		HttpResponse<String> api = get("/js/spatial-api.js");
+		HttpResponse<String> dashboard = get("/js/spatial-dashboard.js");
+
+		for (HttpResponse<String> response : List.of(api, dashboard)) {
+			assertThat(response.statusCode()).isEqualTo(200);
+			assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
+					(contentType) -> assertThat(contentType).contains("javascript"));
+			// Only the Java API is called; the Python address and the internal token never reach the browser.
+			assertThat(response.body()).doesNotContain("8001").doesNotContain("X-Internal-Token")
+				.doesNotContain("/internal/").doesNotContain("innerHTML");
+		}
+		assertThat(api.body()).contains("/spatial-analysis/status").contains("/analysis-snapshots/")
+			.contains("/statistics").contains("Intl.NumberFormat('ko-KR'");
+		assertThat(dashboard.body()).contains("gis:analysisresult").contains("gis:analysissaved")
+			.contains("gis:tabchange").contains("AbortController").contains("textContent");
+		assertThat(get("/js/map-history.js").body()).contains("gis:analysissaved");
+		// Without a key the map scripts are not loaded, but the tab markup is still rendered.
+		assertThat(get("/").body()).doesNotContain("spatial-dashboard.js")
+			.contains("id=\"tab-spatial\"")
+			.contains("id=\"spatial-section\"");
 	}
 
 	@Test
