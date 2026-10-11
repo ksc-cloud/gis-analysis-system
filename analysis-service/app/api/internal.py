@@ -14,8 +14,10 @@ from app.api.errors import from_validation_error
 from app.api.openapi import request_body
 from app.schemas.building_stats import BuildingStatsRequest, BuildingStatsResponse
 from app.schemas.common import ErrorResponse
+from app.schemas.compare import CompareRequest, CompareResponse
 from app.schemas.grid_density import GridDensityRequest, GridDensityResponse
 from app.services.building_stats import compute_building_stats
+from app.services.compare import compare_analyses
 from app.services.grid_density import compute_grid_density
 
 router = APIRouter(prefix="/internal/v1", tags=["internal"])
@@ -23,7 +25,7 @@ router = APIRouter(prefix="/internal/v1", tags=["internal"])
 _ERRORS = {status: {"model": ErrorResponse} for status in (400, 401, 413, 415, 422, 500, 503)}
 
 #: Request models documented in OpenAPI (see app.api.openapi.install).
-REQUEST_MODELS: list[type[BaseModel]] = [BuildingStatsRequest, GridDensityRequest]
+REQUEST_MODELS: list[type[BaseModel]] = [BuildingStatsRequest, GridDensityRequest, CompareRequest]
 
 
 @router.post("/building-stats", response_model=BuildingStatsResponse, responses=_ERRORS,
@@ -44,6 +46,17 @@ async def building_stats(request: Request) -> BuildingStatsResponse:
 async def grid_density(request: Request) -> GridDensityResponse:
     body = await request.body()
     return await run_in_threadpool(_compute, GridDensityRequest, compute_grid_density, body)
+
+
+@router.post("/compare-analyses", response_model=CompareResponse, responses=_ERRORS,
+             openapi_extra=request_body(CompareRequest),
+             summary="저장된 반경 분석 두 건의 비교",
+             description="요청 본문은 CompareRequest(JSON)입니다. X-Internal-Token 헤더가 필요합니다. 이 경로만 요청 "
+                         "본문 상한이 ANALYSIS_COMPARE_MAX_BODY_BYTES(기본 32 MiB)입니다. 비교 조건(중심·반경·기준·"
+                         "데이터 출처·좌표계)이 맞지 않으면 200과 comparable=false, notComparableReasons를 반환합니다.")
+async def compare(request: Request) -> CompareResponse:
+    body = await request.body()
+    return await run_in_threadpool(_compute, CompareRequest, compare_analyses, body)
 
 
 def _compute[Req: BaseModel, Res](model: type[Req], compute: Callable[[Req], Res], body: bytes) -> Res:

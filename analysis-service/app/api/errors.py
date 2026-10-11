@@ -46,6 +46,11 @@ def from_validation_error(ex: ValidationError) -> ApiError:
         return ApiError(400, "INVALID_JSON", "요청 본문이 올바른 JSON이 아닙니다." + suffix, details)
     if "duplicate_building_id" in types:
         return ApiError(422, "DUPLICATE_BUILDING_ID", "같은 건물 id가 두 번 이상 있습니다." + suffix, details)
+    if "same_analysis" in types:
+        return ApiError(422, "SAME_ANALYSIS", "before와 after가 같은 분석(analysisId)입니다." + suffix, details)
+    if "analysis_order_reversed" in types:
+        return ApiError(422, "ANALYSIS_ORDER_REVERSED",
+                        "before의 분석 시점이 after보다 늦습니다. 이전 분석을 before로 보내세요." + suffix, details)
     return ApiError(422, "VALIDATION_ERROR", "요청 값이 계약과 맞지 않습니다." + suffix, details)
 
 

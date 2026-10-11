@@ -1,5 +1,8 @@
 """Guard for /internal/*: X-Internal-Token check, JSON content type and body size limit.
 
+The body limit is ANALYSIS_MAX_BODY_BYTES, except for COMPARE_PATH (two analyses in one body), which uses
+ANALYSIS_COMPARE_MAX_BODY_BYTES.
+
 Runs as plain ASGI middleware so a request is rejected before its body is read or parsed. The token
 comes only from ANALYSIS_INTERNAL_TOKEN; without it every internal request gets 503 (fail closed).
 The token is never logged or returned.
@@ -15,6 +18,7 @@ from app.config import Settings
 
 INTERNAL_PREFIX = "/internal/"
 TOKEN_HEADER = "X-Internal-Token"
+COMPARE_PATH = "/internal/v1/compare-analyses"
 _BODY_METHODS = {"POST", "PUT", "PATCH"}
 
 
@@ -29,20 +33,26 @@ class InternalApiGuard:
             await self.app(scope, receive, send)
             return
         headers = Headers(scope=scope)
-        rejection = self._check_headers(headers, scope["method"])
+        limit = self._body_limit(scope["path"])
+        rejection = self._check_headers(headers, scope["method"], limit)
         if rejection is not None:
             await rejection(scope, receive, send)
             return
         if scope["method"] not in _BODY_METHODS:
             await self.app(scope, receive, send)
             return
-        body = await self._read_body(receive)
+        body = await self._read_body(receive, limit)
         if body is None:
-            await _too_large(self.settings.max_body_bytes)(scope, receive, send)
+            await _too_large(limit)(scope, receive, send)
             return
         await self.app(scope, _replay(body, receive), send)
 
-    def _check_headers(self, headers: Headers, method: str):
+    def _body_limit(self, path: str) -> int:
+        if path == COMPARE_PATH:
+            return self.settings.compare_max_body_bytes
+        return self.settings.max_body_bytes
+
+    def _check_headers(self, headers: Headers, method: str, limit: int):
         expected = self.settings.internal_token
         if not expected:
             return error_response(503, "INTERNAL_TOKEN_NOT_CONFIGURED",
@@ -59,13 +69,12 @@ class InternalApiGuard:
         if length is not None:
             if not length.isdigit():
                 return error_response(400, "INVALID_CONTENT_LENGTH", "Content-Length 값이 올바르지 않습니다.")
-            if int(length) > self.settings.max_body_bytes:
-                return _too_large(self.settings.max_body_bytes)
+            if int(length) > limit:
+                return _too_large(limit)
         return None
 
-    async def _read_body(self, receive: Receive) -> bytes | None:
+    async def _read_body(self, receive: Receive, limit: int) -> bytes | None:
         """Whole body, or None as soon as it passes the limit (also covers chunked bodies)."""
-        limit = self.settings.max_body_bytes
         chunks: list[bytes] = []
         size = 0
         while True:

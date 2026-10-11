@@ -11,6 +11,8 @@ from dataclasses import dataclass
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8001
 DEFAULT_MAX_BODY_BYTES = 16 * 1024 * 1024
+# POST /internal/v1/compare-analyses carries two analyses.
+DEFAULT_COMPARE_MAX_BODY_BYTES = 32 * 1024 * 1024
 
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _FALSE_VALUES = {"0", "false", "no", "off"}
@@ -23,8 +25,10 @@ class Settings:
     docs_enabled: bool = True
     # Required by /internal/* (503 while unset). Never logged or returned.
     internal_token: str | None = None
-    # Request body limit for /internal/*.
+    # Request body limit for /internal/* (except compare-analyses).
     max_body_bytes: int = DEFAULT_MAX_BODY_BYTES
+    # Request body limit for /internal/v1/compare-analyses only.
+    compare_max_body_bytes: int = DEFAULT_COMPARE_MAX_BODY_BYTES
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str] | None = None) -> "Settings":
@@ -34,14 +38,18 @@ class Settings:
             port=_parse_port(env.get("ANALYSIS_PORT")),
             docs_enabled=_parse_bool("ANALYSIS_DOCS_ENABLED", env.get("ANALYSIS_DOCS_ENABLED"), True),
             internal_token=(env.get("ANALYSIS_INTERNAL_TOKEN") or "").strip() or None,
-            max_body_bytes=_parse_body_limit(env.get("ANALYSIS_MAX_BODY_BYTES")),
+            max_body_bytes=_parse_body_limit("ANALYSIS_MAX_BODY_BYTES", env.get("ANALYSIS_MAX_BODY_BYTES"),
+                                             DEFAULT_MAX_BODY_BYTES),
+            compare_max_body_bytes=_parse_body_limit("ANALYSIS_COMPARE_MAX_BODY_BYTES",
+                                                     env.get("ANALYSIS_COMPARE_MAX_BODY_BYTES"),
+                                                     DEFAULT_COMPARE_MAX_BODY_BYTES),
         )
 
     def __repr__(self) -> str:
         token = "set" if self.internal_token else None
         return (f"Settings(host={self.host!r}, port={self.port}, "
                 f"docs_enabled={self.docs_enabled}, internal_token={token!r}, "
-                f"max_body_bytes={self.max_body_bytes})")
+                f"max_body_bytes={self.max_body_bytes}, compare_max_body_bytes={self.compare_max_body_bytes})")
 
 
 def _parse_port(value: str | None) -> int:
@@ -56,15 +64,15 @@ def _parse_port(value: str | None) -> int:
     return port
 
 
-def _parse_body_limit(value: str | None) -> int:
+def _parse_body_limit(name: str, value: str | None, default: int) -> int:
     if value is None or not value.strip():
-        return DEFAULT_MAX_BODY_BYTES
+        return default
     try:
         limit = int(value.strip())
     except ValueError:
-        raise ValueError(f"ANALYSIS_MAX_BODY_BYTES must be an integer: {value!r}") from None
+        raise ValueError(f"{name} must be an integer: {value!r}") from None
     if not 1024 <= limit <= 64 * 1024 * 1024:
-        raise ValueError(f"ANALYSIS_MAX_BODY_BYTES must be between 1024 and 67108864: {limit}")
+        raise ValueError(f"{name} must be between 1024 and 67108864: {limit}")
     return limit
 
 

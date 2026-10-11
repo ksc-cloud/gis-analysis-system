@@ -10,6 +10,7 @@ Areas are in m² on the local tangent plane of the analysis center (same project
 
 import math
 import statistics
+from dataclasses import dataclass
 
 import shapely
 
@@ -17,8 +18,8 @@ from app.geo import geometry as geo
 from app.schemas.building_stats import (BuildingResult, BuildingStatsRequest, BuildingStatsResponse, FloorStats,
                                         FootprintStats, Note, StatWarning, WithinRadiusStats)
 from app.services import radius_analysis as pipeline
-from app.services.floors import java_round, summarize_floors
-from app.services.radius_analysis import AnalyzedBuilding, area as _area
+from app.services.floors import java_round, summarize_floors, valid_floors
+from app.services.radius_analysis import AnalyzedBuilding, RadiusAnalysis, area as _area
 
 _COUNT_TARGETS = ["counts", "footprint.sumArea", "footprint.unionArea", "withinRadius.sumArea",
                   "withinRadius.unionArea"]
@@ -28,20 +29,62 @@ _COVERAGE_TARGETS = ["withinRadius.coverageRatio", "withinRadius.coveragePercent
 _AREA_TARGETS = ["footprint", "withinRadius"]
 
 
+@dataclass(frozen=True)
+class RawStatistics:
+    """Unrounded totals of one analysis (the response rounds them; comparisons use these).
+
+    floor_values: valid ground floors of all input buildings (same population as floors.*)
+    """
+
+    areas: list[float]
+    footprint_sum: float
+    footprint_union: float
+    within_sum: float
+    within_union: float
+    internal_overlap: float
+    coverage: float
+    floor_values: list[int]
+
+    @property
+    def average_area(self) -> float | None:
+        return self.footprint_sum / len(self.areas) if self.areas else None
+
+    @property
+    def average_floors(self) -> float | None:
+        return math.fsum(self.floor_values) / len(self.floor_values) if self.floor_values else None
+
+
+def raw_statistics(analysis: RadiusAnalysis) -> RawStatistics:
+    analyzed = analysis.analyzed
+    footprints = [a.footprint.geometry for a in analyzed]
+    areas = [a.footprint.area for a in analyzed]
+    within_union = analysis.within_union_area
+    return RawStatistics(
+        areas=areas,
+        footprint_sum=math.fsum(areas),
+        footprint_union=shapely.union_all(footprints).area if footprints else 0.0,
+        within_sum=analysis.within_sum_area,
+        within_union=within_union,
+        internal_overlap=math.fsum(a.footprint.internal_overlap_area for a in analyzed),
+        coverage=within_union / analysis.circle_error.exact_area,
+        floor_values=[f for f in (valid_floors(b.ground_floor_raw) for b in analysis.request.buildings)
+                      if f is not None])
+
+
 def compute_building_stats(request: BuildingStatsRequest) -> BuildingStatsResponse:
     analysis = pipeline.prepare(request)
     analyzed = analysis.analyzed
+    raw = raw_statistics(analysis)
 
-    footprints = [a.footprint.geometry for a in analyzed]
-    areas = [a.footprint.area for a in analyzed]
-    footprint_sum = math.fsum(areas)
-    footprint_union = shapely.union_all(footprints).area if footprints else 0.0
-    within_sum = analysis.within_sum_area
-    within_union = analysis.within_union_area
-    internal_overlap = math.fsum(a.footprint.internal_overlap_area for a in analyzed)
+    areas = raw.areas
+    footprint_sum = raw.footprint_sum
+    footprint_union = raw.footprint_union
+    within_sum = raw.within_sum
+    within_union = raw.within_union
+    internal_overlap = raw.internal_overlap
     between_overlap = max(0.0, footprint_sum - footprint_union)
     within_between_overlap = max(0.0, within_sum - within_union)
-    coverage = within_union / analysis.circle_error.exact_area
+    coverage = raw.coverage
 
     floors = summarize_floors([b.ground_floor_raw for b in request.buildings])
     counts = pipeline.counts(analysis)

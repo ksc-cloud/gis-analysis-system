@@ -48,6 +48,7 @@ API docs (development): http://127.0.0.1:8001/docs
 .\.venv\Scripts\python.exe -m pytest -v -s tests/test_building_stats.py::test_5000_buildings   # prints timing
 .\.venv\Scripts\python.exe -m pytest -v -s tests/test_grid_density.py::test_5000_buildings_1km
 .\.venv\Scripts\python.exe -m pytest -v -s tests/test_grid_density_api.py -k 5000             # timing and response size
+.\.venv\Scripts\python.exe -m pytest -v -s tests/test_compare.py tests/test_compare_api.py -k "5000 or 16_mib"
 ```
 
 `tests/test_java_real_results.py` compares real Java results saved in `tests/fixtures/real/*.json`
@@ -60,8 +61,9 @@ API docs (development): http://127.0.0.1:8001/docs
 | GET | `/health` | none | `200 {"status":"ok"}` (liveness only, no external checks) |
 | POST | `/internal/v1/building-stats` | `X-Internal-Token` | building statistics of one radius analysis |
 | POST | `/internal/v1/grid-density` | `X-Internal-Token` | building density per 50/100/200 m grid cell (GeoJSON) |
+| POST | `/internal/v1/compare-analyses` | `X-Internal-Token` | comparison of two saved radius analyses (body limit 32 MiB) |
 
-`/docs` shows the request and response schemas of both internal endpoints. Use **Authorize** to enter the
+`/docs` shows the request and response schemas of all internal endpoints. Use **Authorize** to enter the
 `X-Internal-Token` value; the check itself is still done by the middleware (`app/security.py`), so the documentation
 does not change authentication, the size limit or the error format.
 
@@ -204,15 +206,103 @@ the cell values must not be shown as the density of the whole area.
 Measured (5000 buildings, r = 1000 m, end to end through the API): 50 m cells 1345 cells, 0.75 s, 979 KiB
 (1053 KiB with building ids); 100 m 357 cells, 0.67 s, 419 KiB; 200 m 101 cells, 0.62 s, 273 KiB.
 
+### POST /internal/v1/compare-analyses
+
+Compares two saved analyses (`GET /api/analyses/{id}`, older one as `before`). Each side is the building-stats
+request (without `includeBuildings`) plus `criterion` and `dataSource`; `tests/java_result.py`
+`to_compare_request()` is the reference mapping.
+
+```json
+{
+  "before": {"source": {"kind": "SAVED", "analysisId": 12, "analyzedAt": "2026-03-01T09:00:00Z"},
+             "criterion": "POLYGON_INTERSECTS_CIRCLE",
+             "dataSource": {"provider": "VWorld 2D 데이터 API", "layer": "LT_C_SPBD (도로명주소 건물)",
+                            "coordinateSystem": "EPSG:4326 (WGS84 경위도)"},
+             "center": {"lon": 126.978, "lat": 37.5665}, "radiusMeters": 300, "complete": true,
+             "incompleteReasons": [], "javaSummary": {"...": "optional"}, "buildings": ["..."]},
+  "after": {"...": "same shape, analysisId 15"},
+  "includeUnchanged": false,
+  "includeBuildingChanges": true
+}
+```
+
+| Rule | |
+|---|---|
+| `source` | required on both sides: `kind` `SAVED`, `analysisId`, `analyzedAt` with a time zone |
+| Same `analysisId` | `422 SAME_ANALYSIS` |
+| `before.analyzedAt` later than `after.analyzedAt` | `422 ANALYSIS_ORDER_REVERSED` (equal times are allowed with the `SAME_ANALYZED_AT` warning) |
+| `includeUnchanged` | default `false`: matched buildings without changes are only counted |
+| `includeBuildingChanges` | default `true`; `false` returns only `buildings.summary` |
+| Body limit | `ANALYSIS_COMPARE_MAX_BODY_BYTES` (default 32 MiB) for this path only; the other endpoints keep 16 MiB. Each side keeps the building-stats limits (5,000 buildings, 500,000 positions) |
+
+Response (abridged, from `tests/test_compare_api.py::valid_payload`):
+
+```json
+{
+  "comparable": true, "comparisonBasis": "CHANGE", "notComparableReasons": [],
+  "before": {"source": {}, "counts": {}, "identifiers": {"bd": 2, "feature": 0, "row": 0, "other": 0}, "warnings": []},
+  "after": {"...": "same shape"},
+  "conditions": {"centerDistanceMeters": 0.0, "centerToleranceMeters": 0.05, "sameCenter": true, "sameRadius": true,
+                 "sameCriterion": true, "sameDataSource": true, "sameCoordinateSystem": true,
+                 "analyzedIntervalSeconds": 15897600.0, "bothComplete": true},
+  "method": {"centerToleranceMeters": 0.05, "featureIouThreshold": 0.5, "candidateIouThreshold": 0.9,
+             "geometryToleranceM2": 0.01, "matchingDescription": "...", "statisticsDescription": "...",
+             "analysis": {"...": "building-stats method"}},
+  "statistics": {"basis": "CHANGE", "interpretation": "...",
+                 "buildingCount": {"unit": "count", "before": 2, "after": 2, "delta": 0, "changeRate": 0.0},
+                 "unionArea": {"unit": "m2", "before": 200.0, "after": 200.0, "delta": 0.0, "changeRate": 0.0},
+                 "coverageRatio": {"unit": "ratio", "before": 0.006366, "after": 0.006366, "delta": 0.0,
+                                   "changeRate": 0.0, "deltaPercentPoint": 0.0},
+                 "averageFloors": {"unit": "floors", "before": 3.0, "after": 4.0, "delta": 1.0, "changeRate": 0.333333},
+                 "javaBuildingCount": null, "sumArea": {}, "averageArea": {}, "floorsWithData": {}},
+  "buildings": {
+    "summary": {"matched": 1, "unchanged": 0, "modified": 1, "added": 1, "removed": 1, "onlyInAfter": 0,
+                "onlyInBefore": 0, "uncomparableBefore": 0, "uncomparableAfter": 0, "lowConfidence": 0,
+                "candidates": 0, "ambiguousCandidates": 0},
+    "changes": [
+      {"id": "bd:3", "status": "ADDED", "match": null, "before": null, "after": {"footprintArea": 100.0, "...": ""}},
+      {"id": "bd:2", "status": "REMOVED", "...": ""},
+      {"id": "bd:1", "status": "MODIFIED", "match": {"basis": "BD_MGT_SN", "confidence": "HIGH", "reasons": []},
+       "changes": ["FLOORS"], "footprintArea": {"before": 100.0, "after": 100.0, "delta": 0.0, "changeRate": 0.0},
+       "symmetricDifferenceArea": 0.0, "iou": 1.0,
+       "floors": {"before": 3, "after": 5, "delta": 2, "beforeRaw": "3", "afterRaw": "5"}}],
+    "uncomparable": [], "possibleSameBuilding": []},
+  "warnings": [], "notes": ["..."]
+}
+```
+
+### Comparison rules
+
+| Item | Rule |
+|---|---|
+| Comparable | Centers within 0.05 m (on the tangent plane of `before.center`), equal `radiusMeters`, both criteria `POLYGON_INTERSECTS_CIRCLE`, equal `dataSource.provider`/`layer` and `coordinateSystem`. Otherwise `200` with `comparable: false`, every failed condition in `notComparableReasons`, and `statistics`/`buildings` `null` |
+| Basis | `CHANGE` when both are complete, otherwise `OBSERVATION_DIFFERENCE` (warning, notes; `ONLY_IN_BEFORE`/`ONLY_IN_AFTER` instead of `REMOVED`/`ADDED`) |
+| Statistics | Unrounded building-stats values of each side (same pipeline): `buildingCount` = `counts.analyzed`, `unionArea` = `withinRadius.unionArea`, `sumArea` = `footprint.sumArea`, `coverageRatio` (+ `deltaPercentPoint`), `averageArea` = `footprint.averageArea`, `averageFloors` (unrounded mean of valid floors), `floorsWithData`, `javaBuildingCount` when both sides have `javaSummary`. `delta = after − before`, `changeRate = delta / before` (`null` when before is 0 or missing). Rounded only in the response |
+| `bd:` | Same id = same building, confidence `HIGH` |
+| `feature:` | Same id and whole-footprint IoU ≥ 0.5 = same building, confidence `MEDIUM`; otherwise `FEATURE_ID_UNVERIFIED` (uncomparable, not added/removed) |
+| `row:` / other | Never matched, even with equal ids (`ROW_IDENTIFIER`, `UNKNOWN_IDENTIFIER`) |
+| Repaired footprint | Still compared, confidence `LOW` (`match.reasons`, `LOW_CONFIDENCE` entry) |
+| Excluded footprint | Invalid / zero area / outside the circle on either side: the id is uncomparable (`GEOMETRY_EXCLUDED`, `OUTSIDE_RADIUS`, `COUNTERPART_EXCLUDED`) |
+| Building changes | `GEOMETRY` (symmetric difference ≥ 0.01 m²), `FLOORS` (both valid, different), `FLOORS_DATA` (valid on one side only), `RELATION` (INSIDE ↔ PARTIAL); none = `UNCHANGED` |
+| Candidates | Buildings left unmatched (added/removed, `row:`, unverified `feature:`) with IoU ≥ 0.9 (STRtree). `CANDIDATE` only when the pair is the only one ≥ 0.9 for both buildings, otherwise all pairs of those buildings are `AMBIGUOUS`; no 1:1 assignment is guessed. Candidates never change a status or a statistic |
+
+Notes in every response: differences are differences of VWorld LT_C_SPBD data between the two analysis times; VWorld
+update times can differ from real construction or demolition, and `ADDED`/`REMOVED` do not confirm either.
+
+Measured: 5000 + 5000 buildings at r = 1000 m: 2.9 MiB request, 1.9 s end to end, 964 KiB response
+(617 modified, 40 renumbered ids reported as candidates); 45-vertex footprints: 18.5 MiB request, 4.2 s, about
+100 MiB peak Python allocation (GEOS memory not included).
+
 ### Errors (`{"error", "message", "details"?}`, never containing submitted values)
 
 | Status | error | When |
 |---|---|---|
 | 400 | `INVALID_JSON`, `INVALID_CONTENT_LENGTH` | body is not JSON / bad header |
 | 401 | `UNAUTHORIZED` | `X-Internal-Token` missing or wrong |
-| 413 | `PAYLOAD_TOO_LARGE` | body over `ANALYSIS_MAX_BODY_BYTES` (default 16 MiB), also for chunked bodies |
+| 413 | `PAYLOAD_TOO_LARGE` | body over `ANALYSIS_MAX_BODY_BYTES` (default 16 MiB; compare-analyses: `ANALYSIS_COMPARE_MAX_BODY_BYTES`, default 32 MiB), also for chunked bodies |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | not `application/json` |
 | 422 | `VALIDATION_ERROR`, `DUPLICATE_BUILDING_ID` | contract violations (first 20 details) |
+| 422 | `SAME_ANALYSIS`, `ANALYSIS_ORDER_REVERSED` | compare-analyses: same `analysisId`, `before` later than `after` |
 | 503 | `INTERNAL_TOKEN_NOT_CONFIGURED` | `ANALYSIS_INTERNAL_TOKEN` is not set |
 
 Limits: 5,000 buildings, 100 polygons per building, 100 rings per polygon, 10,000 positions per ring,
@@ -226,6 +316,7 @@ Limits: 5,000 buildings, 100 polygons per building, 100 rings per polygon, 10,00
 | `ANALYSIS_PORT` | `8001` | Port |
 | `ANALYSIS_DOCS_ENABLED` | `true` | Expose `/docs`, `/redoc`, `/openapi.json` |
 | `ANALYSIS_INTERNAL_TOKEN` | (unset) | Required by `/internal/*` (503 while unset). Never commit or log a value. |
-| `ANALYSIS_MAX_BODY_BYTES` | `16777216` | Request body limit for `/internal/*` (1024 – 67108864) |
+| `ANALYSIS_MAX_BODY_BYTES` | `16777216` | Request body limit for `/internal/*` except compare-analyses (1024 – 67108864) |
+| `ANALYSIS_COMPARE_MAX_BODY_BYTES` | `33554432` | Request body limit for `/internal/v1/compare-analyses` only (1024 – 67108864) |
 
 `ANALYSIS_HOST` / `ANALYSIS_PORT` apply to `python -m app`; when running `uvicorn` directly, pass `--host` / `--port`.
