@@ -347,7 +347,7 @@
 			</p>
 		</section>
 
-		<%-- 공간 분석: 공간 통계(8-6A, spatial-dashboard.js), 저장된 분석 비교(8-6C, spatial-compare.js). 격자는 다음 단계. --%>
+		<%-- 공간 분석: 공간 통계(8-6A, spatial-dashboard.js), 격자 밀집도(8-6B, spatial-grid.js), 저장된 분석 비교(8-6C, spatial-compare.js) --%>
 		<section class="panel-section spatial" id="spatial-section" data-state="empty" role="tabpanel"
 				 aria-labelledby="spatial-title" hidden>
 			<div class="building__header">
@@ -356,8 +356,8 @@
 			<div class="spatial-views" role="group" aria-label="공간 분석 화면">
 				<button type="button" class="spatial-views__button" id="spatial-view-button-stats" data-view="stats"
 						aria-pressed="true" aria-controls="spatial-view-stats">통계</button>
-				<button type="button" class="spatial-views__button" aria-pressed="false" disabled
-						title="다음 단계에서 제공할 예정입니다.">격자 <span class="spatial-views__soon">준비 중</span></button>
+				<button type="button" class="spatial-views__button" id="spatial-view-button-grid" data-view="grid"
+						aria-pressed="false" aria-controls="spatial-view-grid">격자</button>
 				<button type="button" class="spatial-views__button" id="spatial-view-button-compare" data-view="compare"
 						aria-pressed="false" aria-controls="spatial-view-compare">비교</button>
 			</div>
@@ -389,6 +389,39 @@
 					점유율은 반경 원 면적에 대한 건물 점유 면적의 비율(%)입니다.
 				</p>
 			</div>
+			</div>
+
+			<%-- 격자 밀집도 (spatial-grid.js, 지도 도형: spatial-grid-renderer.js) --%>
+			<div class="spatial-view grid-view" id="spatial-view-grid" data-state="off" hidden>
+				<p class="empty-state" id="grid-empty">
+					분석 결과가 없습니다.<br>
+					반경 분석을 실행하거나 분석 이력에서 저장된 분석을 열면 격자 밀집도를 지도에 표시할 수 있습니다.
+				</p>
+				<div class="grid-controls">
+					<label class="grid-controls__toggle">
+						<input type="checkbox" id="grid-display"> 지도에 격자 표시
+					</label>
+					<div class="grid-controls__sizes" role="group" aria-label="셀 크기">
+						<button type="button" class="tool-bar__button" id="grid-size-50" data-cell-size="50" aria-pressed="false">50m</button>
+						<button type="button" class="tool-bar__button" id="grid-size-100" data-cell-size="100" aria-pressed="true">100m</button>
+						<button type="button" class="tool-bar__button" id="grid-size-200" data-cell-size="200" aria-pressed="false">200m</button>
+					</div>
+					<label class="grid-controls__toggle">
+						<input type="checkbox" id="grid-exclude-empty" checked> 빈 격자 숨기기
+					</label>
+				</div>
+				<p class="spatial__status" id="grid-status" role="status" aria-live="polite" hidden></p>
+				<button type="button" class="building-status__retry" id="grid-retry" hidden>다시 시도</button>
+				<p class="grid-summary" id="grid-summary" hidden></p>
+				<ul class="spatial__warnings" id="grid-notices" hidden></ul>
+				<div class="grid-detail" id="grid-detail" hidden></div>
+				<h3 class="analysis__subtitle">범례 (셀 점유율)</h3>
+				<ul class="grid-legend" id="grid-legend"></ul>
+				<p class="panel-hint" id="grid-hint">
+					셀 점유율은 셀 중 반경 원 안에 든 면적에 대한 건물 점유 면적의 비율입니다. 격자를 표시하는 동안 분석 건물 도형은
+					숨기고 반경 원과 중심점은 그대로 둡니다. 격자는 지면에 그려지므로 3D 건물에 가려질 수 있습니다. 잘 보이지 않으면
+					레이어에서 "3D 건물"을 끄세요. 셀을 누르면 셀 정보를 볼 수 있습니다(거리·면적 측정과 좌표 조회 중에는 제외).
+				</p>
 			</div>
 
 			<%-- 저장된 분석 비교 (spatial-compare.js) --%>
@@ -450,6 +483,11 @@
 			data-api-base="${pageContext.request.contextPath}/api"></script>
 	<%-- 저장된 분석 비교: GET /api/analyses/{id}/comparison?with={otherId}. 분석 이력의 "비교 선택"과 공간 분석 탭의 비교 보기 --%>
 	<script src="${pageContext.request.contextPath}/js/spatial-compare.js"
+			data-api-base="${pageContext.request.contextPath}/api"></script>
+	<%-- 격자 밀집도: 도형(spatial-grid-renderer.js, gis:mapready로 지도 연결)과 격자 보기(spatial-grid.js).
+		 GET /api/analysis-snapshots/{token}/grid-density, /api/analyses/{id}/grid-density. vworld-map.js 전에 로드한다. --%>
+	<script src="${pageContext.request.contextPath}/js/spatial-grid-renderer.js"></script>
+	<script src="${pageContext.request.contextPath}/js/spatial-grid.js"
 			data-api-base="${pageContext.request.contextPath}/api"></script>
 	<%-- 지도 검색: /api/search 통신, 검색 위치 마커, "이 위치로 반경 분석"(window.gisAnalysis.startAt) --%>
 	<script src="${pageContext.request.contextPath}/js/map-search.js"

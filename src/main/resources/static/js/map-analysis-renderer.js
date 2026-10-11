@@ -12,6 +12,9 @@
  * - MultiPolygon은 조각마다 PolygonZ를 만든다. 구멍은 지도에 표시하지 못한다(서버 판정에는 반영).
  * - 결과는 실시간(live, 파랑/주황)과 저장본(saved, 보라/분홍) 색상표로 구분하고, 중심점 문구로도 구분한다.
  *   어느 쪽이든 그리기 전에 이전 분석 도형을 모두 지우므로 두 결과가 겹쳐 표시되지 않는다.
+ * - 격자 밀집도를 지도에 표시하는 동안(spatial-grid.js)은 setBuildingsVisible(false)로 건물 도형만 지도에서 내린다.
+ *   정의는 그대로 두므로 다시 켜면 같은 건물을 그린다. 반경 원과 중심점은 유지하고, 숨긴 동안에는 restore()와
+ *   강조 표시도 건물 도형을 다시 만들지 않는다. clear()(새 결과·초기화)는 다시 보이는 상태로 돌아간다.
  */
 (function () {
 	'use strict';
@@ -35,6 +38,7 @@
 	var items = [];
 	var highlightedId = null;
 	var currentStyle = null; // null(없음) | 'preview' | 'live' | 'saved'
+	var buildingsVisible = true;
 
 	function isSupported() {
 		return !!(window.vw && vw.geom && typeof vw.geom.CircleZ === 'function'
@@ -117,10 +121,16 @@
 		item.obj = obj;
 	}
 
+	function shouldDraw(item) {
+		return item.kind !== 'building' || buildingsVisible;
+	}
+
 	function add(kind, spec, buildingId) {
 		var item = { kind: kind, spec: spec, obj: null, buildingId: buildingId };
 		try {
-			build(item);
+			if (shouldDraw(item)) {
+				build(item);
+			}
 			items.push(item);
 			return true;
 		} catch (e) {
@@ -135,6 +145,32 @@
 		items = [];
 		highlightedId = null;
 		currentStyle = null;
+		buildingsVisible = true;
+	}
+
+	/* 건물 도형만 지도에서 내리거나(false) 다시 그린다(true). 반경 원과 중심점은 그대로다. */
+	function setBuildingsVisible(visible) {
+		var next = visible !== false;
+		if (next === buildingsVisible) {
+			return;
+		}
+		buildingsVisible = next;
+		items.forEach(function (item) {
+			if (item.kind !== 'building') {
+				return;
+			}
+			if (!next) {
+				remove(item);
+				return;
+			}
+			if (!item.obj) {
+				try {
+					build(item);
+				} catch (e) {
+					console.warn('[GIS 3D 지도] 분석 도형 다시 표시 실패', e);
+				}
+			}
+		});
 	}
 
 	function paletteName(style) {
@@ -203,7 +239,7 @@
 
 	function redrawBuilding(buildingId) {
 		items.forEach(function (item) {
-			if (item.buildingId !== buildingId || !item.obj) {
+			if (item.buildingId !== buildingId || !item.obj || !shouldDraw(item)) {
 				return;
 			}
 			remove(item);
@@ -232,6 +268,9 @@
 		var restored = 0;
 		items.forEach(function (item) {
 			remove(item);
+			if (!shouldDraw(item)) {
+				return; // 숨긴 건물 도형은 다시 켤 때 그린다.
+			}
 			try {
 				build(item);
 				restored++;
@@ -260,6 +299,11 @@
 		},
 		setPickHandler: function (fn) {
 			pickHandler = fn;
+		},
+		// 격자 밀집도 표시 중 건물 도형 숨기기 (spatial-grid.js)
+		setBuildingsVisible: setBuildingsVisible,
+		areBuildingsVisible: function () {
+			return buildingsVisible;
 		}
 	};
 })();

@@ -559,6 +559,8 @@
 			historyClear: $('history-compare-clear'),
 			viewStats: $('spatial-view-stats'),
 			viewCompare: $('spatial-view-compare'),
+			viewGrid: $('spatial-view-grid'),
+			buttonGrid: $('spatial-view-button-grid'),
 			buttonStats: $('spatial-view-button-stats'),
 			buttonCompare: $('spatial-view-button-compare'),
 			empty: $('compare-empty'),
@@ -608,15 +610,16 @@
 			return analysis && analysis.formatDateTime ? analysis.formatDateTime(iso) : text(iso);
 		}
 
-		/* ---- 보기 전환 (통계 / 비교) ---- */
+		/* ---- 보기 전환 (통계 / 격자 / 비교). 격자 보기의 내용은 spatial-grid.js가 그린다. ---- */
 
 		var currentView = 'stats';
 
 		function setView(name) {
-			currentView = name === 'compare' ? 'compare' : 'stats';
+			currentView = name === 'compare' || (name === 'grid' && el.viewGrid) ? name : 'stats';
 			show(el.viewStats, currentView === 'stats');
+			show(el.viewGrid, currentView === 'grid');
 			show(el.viewCompare, currentView === 'compare');
-			[el.buttonStats, el.buttonCompare].forEach(function (button) {
+			[el.buttonStats, el.buttonGrid, el.buttonCompare].forEach(function (button) {
 				if (button) {
 					button.setAttribute('aria-pressed', String(button.getAttribute('data-view') === currentView));
 				}
@@ -897,7 +900,7 @@
 			controller.run();
 		}
 
-		[el.buttonStats, el.buttonCompare].forEach(function (button) {
+		[el.buttonStats, el.buttonGrid, el.buttonCompare].forEach(function (button) {
 			if (button) {
 				button.addEventListener('click', function () {
 					setView(button.getAttribute('data-view'));

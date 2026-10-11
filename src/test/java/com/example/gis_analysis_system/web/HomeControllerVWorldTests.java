@@ -189,9 +189,11 @@ class HomeControllerVWorldTests {
 			.contains("aria-pressed=\"true\" aria-controls=\"spatial-view-stats\">통계</button>")
 			.contains("id=\"spatial-view-stats\"")
 			.contains("data-api-base=\"/api\"");
-		// The grid is announced but cannot be used yet (step 8-6B); the comparison view is enabled (8-6C).
-		assertThat(body.split("class=\"spatial-views__button\" aria-pressed=\"false\" disabled", -1)).hasSize(2);
-		assertThat(body).contains(">격자 <span class=\"spatial-views__soon\">준비 중</span>")
+		// The grid (8-6B) and comparison (8-6C) views are both enabled.
+		assertThat(body).doesNotContain("class=\"spatial-views__button\" aria-pressed=\"false\" disabled")
+			.doesNotContain("spatial-views__soon")
+			.contains("id=\"spatial-view-button-grid\" data-view=\"grid\"")
+			.contains("aria-pressed=\"false\" aria-controls=\"spatial-view-grid\">격자</button>")
 			.contains("id=\"spatial-view-button-compare\" data-view=\"compare\"")
 			.contains("aria-pressed=\"false\" aria-controls=\"spatial-view-compare\">비교</button>")
 			.doesNotContain(">비교 <span class=\"spatial-views__soon\">");
@@ -245,6 +247,42 @@ class HomeControllerVWorldTests {
 		assertThat(compareScript).isGreaterThan(dashboardScript);
 		assertThat(mapScript).isGreaterThan(compareScript);
 		assertThat(body.substring(compareScript - 120, compareScript + 120)).contains("data-api-base=\"/api\"");
+	}
+
+	@Test
+	void homeRendersTheGridViewAndLoadsTheGridScriptsBeforeTheMap() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		assertThat(body).contains("id=\"spatial-view-grid\" data-state=\"off\" hidden")
+			.contains("id=\"grid-empty\"")
+			.contains("<input type=\"checkbox\" id=\"grid-display\"> 지도에 격자 표시")
+			.contains("id=\"grid-size-50\" data-cell-size=\"50\" aria-pressed=\"false\">50m</button>")
+			.contains("id=\"grid-size-100\" data-cell-size=\"100\" aria-pressed=\"true\">100m</button>")
+			.contains("id=\"grid-size-200\" data-cell-size=\"200\" aria-pressed=\"false\">200m</button>")
+			.contains("<input type=\"checkbox\" id=\"grid-exclude-empty\" checked> 빈 격자 숨기기")
+			.contains("id=\"grid-status\" role=\"status\" aria-live=\"polite\" hidden")
+			.contains("id=\"grid-retry\" hidden")
+			.contains("id=\"grid-summary\" hidden")
+			.contains("id=\"grid-notices\" hidden")
+			.contains("id=\"grid-detail\" hidden")
+			.contains("id=\"grid-legend\"");
+		// The grid view sits between the statistics and comparison views.
+		assertThat(body.indexOf("id=\"spatial-view-grid\"")).isGreaterThan(body.indexOf("id=\"spatial-view-stats\""))
+			.isLessThan(body.indexOf("id=\"spatial-view-compare\""));
+
+		int compareScript = body.indexOf("/js/spatial-compare.js");
+		int rendererScript = body.indexOf("/js/spatial-grid-renderer.js");
+		int gridScript = body.indexOf("/js/spatial-grid.js");
+		int toolsScript = body.indexOf("/js/map-tools.js");
+		int mapScript = body.indexOf("/js/vworld-map.js");
+		// spatial-grid.js uses window.gisCompare (view switch), window.gisGridRenderer/gisGridModel, and the renderer
+		// connects to the map on gis:mapready, so both come after spatial-compare.js and before vworld-map.js.
+		assertThat(rendererScript).isGreaterThan(compareScript);
+		assertThat(gridScript).isGreaterThan(rendererScript);
+		assertThat(toolsScript).isGreaterThan(gridScript);
+		assertThat(mapScript).isGreaterThan(gridScript);
+		assertThat(body.substring(gridScript - 120, gridScript + 120)).contains("data-api-base=\"/api\"");
 	}
 
 }

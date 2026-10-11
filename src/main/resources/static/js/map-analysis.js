@@ -851,9 +851,13 @@
 		}
 	}
 
-	function onPicked(id) {
-		// 도형 클릭 직후 이어지는 지도 클릭이 새 중심점으로 처리되지 않게 한다. (엔진은 도형 picking을 먼저 알린다)
+	// 도형 클릭 직후 이어지는 지도 클릭이 새 중심점으로 처리되지 않게 한다. (엔진은 도형 picking을 먼저 알린다)
+	function suppressNextMapClick() {
 		suppressClickUntil = Date.now() + 400;
+	}
+
+	function onPicked(id) {
+		suppressNextMapClick();
 		selectBuilding(id, false);
 	}
 
@@ -1031,6 +1035,8 @@
 		clearSaved: clearSaved,
 		// 지도 검색 모듈(map-search.js)용: 중심점만 정하고 분석은 실행하지 않는다.
 		startAt: startAt,
+		// 격자 셀(spatial-grid.js) 등 다른 도형을 클릭한 직후의 지도 클릭이 반경 중심점을 바꾸지 않게 한다.
+		suppressNextMapClick: suppressNextMapClick,
 		showTab: showTab,
 		openInfoPanel: openInfoPanel,
 		formatDateTime: formatDateTime,

@@ -6,6 +6,7 @@
  *   GET /api/analysis-snapshots/{token}/statistics      : 저장 전 분석의 공간 통계
  *   GET /api/analyses/{id}/statistics                   : 저장된 분석의 공간 통계
  *   GET /api/analyses/{id}/comparison?with={otherId}    : 저장된 분석 두 건의 비교 (8-6C, 이전·이후는 서버가 정한다)
+ *   GET /api/analysis-snapshots/{token}/grid-density, GET /api/analyses/{id}/grid-density : 격자 밀집도 (8-6B)
  *   응답: { analysisIds, analysisService: { schemaVersion }, result: building-stats 응답 }
  *   오류: { error, message, analysisServiceError? }
  * - 오류 코드는 이 파일의 한국어 문구로만 안내한다. (서버 메시지를 그대로 쓰지 않는다)
@@ -83,6 +84,21 @@
 			return root + '/analysis-snapshots/' + encodeURIComponent(target.token) + '/statistics';
 		}
 		return null;
+	}
+
+	var GRID_CELL_SIZES = [50, 100, 200];
+
+	/*
+	 * 격자 밀집도. 빈 격자도 모두 받아 화면에서 거르고, 셀별 건물 ID는 받지 않는다.
+	 * target: statisticsUrl과 같다. cellSize: 50 | 100 | 200
+	 */
+	function gridDensityUrl(target, cellSize, base) {
+		var stats = statisticsUrl(target, base);
+		if (!stats || GRID_CELL_SIZES.indexOf(cellSize) < 0) {
+			return null;
+		}
+		return stats.replace(/\/statistics$/, '/grid-density') + '?cellSize=' + cellSize
+			+ '&includeEmptyCells=true&includeBuildingIds=false';
 	}
 
 	/*
@@ -262,6 +278,8 @@
 		statusUrl: statusUrl,
 		statisticsUrl: statisticsUrl,
 		comparisonUrl: comparisonUrl,
+		gridDensityUrl: gridDensityUrl,
+		GRID_CELL_SIZES: GRID_CELL_SIZES,
 		getJson: getJson,
 		errorCode: errorCode,
 		describeError: describeError,

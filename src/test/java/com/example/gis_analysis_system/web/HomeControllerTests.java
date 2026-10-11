@@ -157,8 +157,10 @@ class HomeControllerTests {
 		HttpResponse<String> api = get("/js/spatial-api.js");
 		HttpResponse<String> dashboard = get("/js/spatial-dashboard.js");
 		HttpResponse<String> compare = get("/js/spatial-compare.js");
+		HttpResponse<String> gridRenderer = get("/js/spatial-grid-renderer.js");
+		HttpResponse<String> grid = get("/js/spatial-grid.js");
 
-		for (HttpResponse<String> response : List.of(api, dashboard, compare)) {
+		for (HttpResponse<String> response : List.of(api, dashboard, compare, gridRenderer, grid)) {
 			assertThat(response.statusCode()).isEqualTo(200);
 			assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
 					(contentType) -> assertThat(contentType).contains("javascript"));
@@ -172,11 +174,19 @@ class HomeControllerTests {
 			.contains("gis:tabchange").contains("AbortController").contains("textContent");
 		assertThat(compare.body()).contains("/comparison?with=").doesNotContain("신축했").contains("gis:compareselection")
 			.contains("gis:historychange").contains("gis:spatialviewchange").contains("AbortController");
-		assertThat(api.body()).contains("/comparison?with=").contains("%p");
+		assertThat(api.body()).contains("/comparison?with=").contains("%p").contains("/grid-density");
+		// The grid uses the public VWorld shape API (map.clear() is checked on the code without comments in the JS tests).
+		assertThat(gridRenderer.body()).contains("vw.geom.PolygonZ").contains("removeObject")
+			.doesNotContain("ws3d");
+		assertThat(grid.body()).contains("gis:measurereset").contains("gis:analysissaved").contains("suppressNextMapClick")
+			.contains("setBuildingsVisible").contains("AbortController");
+		assertThat(get("/js/map-analysis-renderer.js").body()).contains("setBuildingsVisible");
+		assertThat(get("/js/map-analysis.js").body()).contains("suppressNextMapClick");
 		assertThat(get("/js/map-history.js").body()).contains("gis:analysissaved").contains("gis:historychange")
 			.contains("gis:compareselection");
 		// Without a key the map scripts are not loaded, but the tab markup is still rendered.
 		assertThat(get("/").body()).doesNotContain("spatial-dashboard.js").doesNotContain("spatial-compare.js")
+			.doesNotContain("spatial-grid.js").doesNotContain("spatial-grid-renderer.js")
 			.contains("id=\"tab-spatial\"")
 			.contains("id=\"spatial-section\"");
 	}

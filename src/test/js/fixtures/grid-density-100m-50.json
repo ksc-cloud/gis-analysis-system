@@ -1,0 +1,1174 @@
+{
+ "analysisIds": [
+  7
+ ],
+ "analysisService": {
+  "schemaVersion": 1
+ },
+ "result": {
+  "schemaVersion": 1,
+  "source": {
+   "kind": "SAVED",
+   "analysisId": 7,
+   "analyzedAt": "2026-10-11T03:00:00Z"
+  },
+  "center": {
+   "lon": 127.0,
+   "lat": 37.5
+  },
+  "radiusMeters": 100,
+  "cellSizeMeters": 50,
+  "method": {
+   "projection": "LOCAL_TANGENT_PLANE_WGS84",
+   "projectionDescription": "분석 중심점에 접하는 평면(동쪽 x, 북쪽 y, m)으로 투영합니다. Java PlanarGeometry와 같은 WGS84 곡률반경 공식이며 중심에서 1km 이내 축척 오차는 약 0.01%입니다.",
+   "areaUnit": "m2",
+   "toleranceMeters": 0.001,
+   "circleSegments": 256,
+   "circleArea": 31415.93,
+   "circlePolygonArea": 31412.77,
+   "circleAreaErrorRatio": 0.0001003958,
+   "circleMissingArea": 3.15,
+   "circleMaxRadialGapMeters": 0.0075,
+   "circleDescription": "반경 원은 내접 256각형으로 근사합니다. 다각형 면적은 실제 원보다 0.0100%(3.15m²) 작고, 경계는 최대 0.0075m 안쪽에 있습니다. 근사는 경계에 걸친(PARTIAL) 건물의 교차 면적에만 쓰며, 완전 포함(INSIDE) 건물은 전체 면적을, 점유율 분모는 실제 원 면적 πr²을 사용합니다. 따라서 반경 내 점유 면적(unionArea)은 실제보다 최대 circleMissingArea만큼 작을 수 있고, 원에 조금만 걸친 건물 하나의 교차 면적은 상대적으로 크게 작아질 수 있습니다."
+  },
+  "grid": {
+   "cellSizeMeters": 50,
+   "cellArea": 2500.0,
+   "origin": "CELL_CENTERED_AT_ANALYSIS_CENTER",
+   "columns": [
+    -2,
+    2
+   ],
+   "rows": [
+    -2,
+    2
+   ],
+   "cellCount": 21,
+   "returnedCellCount": 21,
+   "emptyCellCount": 13,
+   "boundaryCellCount": 16,
+   "smallBoundaryCellCount": 8,
+   "smallBoundaryRatio": 0.25,
+   "minBuildingAreaInCell": 0.01,
+   "description": "50m 정사각형 격자입니다. 셀 (0,0)의 중심이 분석 중심점이고 col은 동쪽, row는 북쪽으로 증가합니다. 격자는 분석 중심점의 접평면(m)에서 만들고 GeoJSON 좌표는 같은 투영의 역변환(WGS84 경위도, 소수 9자리)입니다. 반경 원과 면적을 공유하는 셀만 포함하며, 경계 셀도 정사각형 전체를 반환하지만 점유율의 분모(domainArea)는 실제 원과 셀의 교집합 면적(해석적 계산)입니다.",
+   "comparisonWithBuildingStats": "건물 선정, 도형 복구, 반경 판정, 256각형 절단은 building-stats와 같습니다. 모든 셀의 occupiedArea 합계는 withinRadius.unionArea, domainArea 합계는 πr²(method.circleArea)이므로 전체 점유율은 withinRadius.coverageRatio와 같습니다. 차이: (1) 경계 셀의 분자는 256각형으로 자른 면적이고 분모는 실제 원 기준이므로, 전체 점유율과 같은 방식으로 경계 셀 점유율이 실제보다 조금 작을 수 있습니다. (2) buildingCount는 셀 안 면적이 0.01m² 이상인 건물 수이므로 여러 셀에 걸친 건물은 각 셀에서 세고, 합계가 counts.analyzed보다 클 수 있습니다. primaryBuildingCount는 건물마다 한 셀에서만 셉니다. (3) 반경 안 면적이 없는 PARTIAL 건물(counts.zeroAreaInRadius)은 buildingCount에 들어가지 않고, primaryBuildingCount만 중심에 가장 가까운 지점이 있는 셀(summary.primaryByNearestCell)에 더합니다. (4) 층수 통계는 계산하지 않습니다."
+  },
+  "counts": {
+   "total": 5,
+   "validGeometry": 5,
+   "analyzed": 5,
+   "repaired": 0,
+   "excluded": 0,
+   "inside": 4,
+   "partial": 1,
+   "zeroAreaInRadius": 0,
+   "multiPartOverlap": 0,
+   "duplicateGeometry": 0,
+   "relationMismatch": 0,
+   "distanceMismatch": 0
+  },
+  "summary": {
+   "domainArea": 31415.93,
+   "sumArea": 3152.56,
+   "occupiedArea": 3152.56,
+   "coverageRatio": 0.100349,
+   "coveragePercent": 10.03,
+   "occupiedCellCount": 8,
+   "primaryBuildingCount": 5,
+   "primaryByNearestCell": 0
+  },
+  "consistency": {
+   "withinRadiusUnionArea": 3152.56,
+   "occupiedAreaCalculationDifference": 0.0,
+   "occupiedAreaDisplayDifference": 0.0,
+   "occupiedAreaMatches": true,
+   "circleArea": 31415.93,
+   "domainAreaCalculationDifference": 0.0,
+   "domainAreaDisplayDifference": -0.01,
+   "analyzedBuildings": 5,
+   "primaryBuildingTotal": 5,
+   "primaryMatchesAnalyzed": true,
+   "description": "calculationDifference는 반올림하지 않은 셀 값의 합계와 기준값(withinRadius.unionArea 또는 πr²)의 차이로 실제 계산 오차(부동소수점·도형 연산)입니다. displayDifference는 응답에 표시된(소수 2자리로 반올림한) 셀 값의 합계와 표시된 기준값의 차이로 반올림 때문에만 생깁니다. 계산 오차가 0.001m² 이하이면 occupiedAreaMatches가 true입니다. 합계는 includeEmptyCells와 관계없이 모든 셀로 계산합니다."
+  },
+  "completeness": {
+   "complete": true,
+   "scope": "COMPLETE_RESULT",
+   "reasons": [],
+   "javaOutsideExcluded": null,
+   "javaGeometryUnavailable": null,
+   "notes": [
+    {
+     "targets": [
+      "cells.features[].properties.sumArea",
+      "cells.features[].properties.occupiedArea",
+      "summary"
+     ],
+     "message": "면적은 VWorld LT_C_SPBD(도로명주소 건물) 도형의 수평 면적(m²)이며 건축물대장의 건축면적이나 연면적과 다를 수 있습니다."
+    }
+   ]
+  },
+  "warnings": [
+   {
+    "code": "SMALL_BOUNDARY_CELLS",
+    "message": "반경 원 안의 면적이 셀 면적의 25% 미만인 경계 셀(smallBoundary)은 분모가 작아 건물 하나로도 점유율이 크게 달라집니다. 다른 셀과 같은 기준의 밀집도로 비교하지 마세요.",
+    "count": 8
+   }
+  ],
+  "excluded": [],
+  "cells": {
+   "type": "FeatureCollection",
+   "features": [
+    {
+     "type": "Feature",
+     "id": "-1:-2",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999151828,
+         37.498873742
+        ],
+        [
+         126.999717276,
+         37.498873742
+        ],
+        [
+         126.999717276,
+         37.499324245
+        ],
+        [
+         126.999151828,
+         37.499324245
+        ],
+        [
+         126.999151828,
+         37.498873742
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -1,
+      "row": -2,
+      "centerLon": 126.999434552,
+      "centerLat": 37.499098994,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 1,
+      "primaryBuildingCount": 1,
+      "sumArea": 25.0,
+      "occupiedArea": 25.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.046766,
+      "coveragePercent": 4.68,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "0:-2",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999717276,
+         37.498873742
+        ],
+        [
+         127.000282724,
+         37.498873742
+        ],
+        [
+         127.000282724,
+         37.499324245
+        ],
+        [
+         126.999717276,
+         37.499324245
+        ],
+        [
+         126.999717276,
+         37.498873742
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 0,
+      "row": -2,
+      "centerLon": 127.0,
+      "centerLat": 37.499098994,
+      "cellArea": 2500.0,
+      "domainArea": 1197.42,
+      "domainRatio": 0.478967,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 1,
+      "primaryBuildingCount": 0,
+      "sumArea": 15.0,
+      "occupiedArea": 15.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.012527,
+      "coveragePercent": 1.25,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "1:-2",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000282724,
+         37.498873742
+        ],
+        [
+         127.000848172,
+         37.498873742
+        ],
+        [
+         127.000848172,
+         37.499324245
+        ],
+        [
+         127.000282724,
+         37.499324245
+        ],
+        [
+         127.000282724,
+         37.498873742
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 1,
+      "row": -2,
+      "centerLon": 127.000565448,
+      "centerLat": 37.499098994,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "-2:-1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.99858638,
+         37.499324245
+        ],
+        [
+         126.999151828,
+         37.499324245
+        ],
+        [
+         126.999151828,
+         37.499774748
+        ],
+        [
+         126.99858638,
+         37.499774748
+        ],
+        [
+         126.99858638,
+         37.499324245
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -2,
+      "row": -1,
+      "centerLon": 126.998869104,
+      "centerLat": 37.499549497,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "-1:-1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999151828,
+         37.499324245
+        ],
+        [
+         126.999717276,
+         37.499324245
+        ],
+        [
+         126.999717276,
+         37.499774748
+        ],
+        [
+         126.999151828,
+         37.499774748
+        ],
+        [
+         126.999151828,
+         37.499324245
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -1,
+      "row": -1,
+      "centerLon": 126.999434552,
+      "centerLat": 37.499549497,
+      "cellArea": 2500.0,
+      "domainArea": 2462.42,
+      "domainRatio": 0.984969,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 1,
+      "primaryBuildingCount": 0,
+      "sumArea": 15.0,
+      "occupiedArea": 15.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.006092,
+      "coveragePercent": 0.61,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "0:-1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999717276,
+         37.499324245
+        ],
+        [
+         127.000282724,
+         37.499324245
+        ],
+        [
+         127.000282724,
+         37.499774748
+        ],
+        [
+         126.999717276,
+         37.499774748
+        ],
+        [
+         126.999717276,
+         37.499324245
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 0,
+      "row": -1,
+      "centerLon": 127.0,
+      "centerLat": 37.499549497,
+      "cellArea": 2500.0,
+      "domainArea": 2500.0,
+      "domainRatio": 1.0,
+      "boundary": false,
+      "smallBoundary": false,
+      "buildingCount": 1,
+      "primaryBuildingCount": 0,
+      "sumArea": 9.0,
+      "occupiedArea": 9.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0036,
+      "coveragePercent": 0.36,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "1:-1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000282724,
+         37.499324245
+        ],
+        [
+         127.000848172,
+         37.499324245
+        ],
+        [
+         127.000848172,
+         37.499774748
+        ],
+        [
+         127.000282724,
+         37.499774748
+        ],
+        [
+         127.000282724,
+         37.499324245
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 1,
+      "row": -1,
+      "centerLon": 127.000565448,
+      "centerLat": 37.499549497,
+      "cellArea": 2500.0,
+      "domainArea": 2462.42,
+      "domainRatio": 0.984969,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "2:-1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000848172,
+         37.499324245
+        ],
+        [
+         127.00141362,
+         37.499324245
+        ],
+        [
+         127.00141362,
+         37.499774748
+        ],
+        [
+         127.000848172,
+         37.499774748
+        ],
+        [
+         127.000848172,
+         37.499324245
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 2,
+      "row": -1,
+      "centerLon": 127.001130896,
+      "centerLat": 37.499549497,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "-2:0",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.99858638,
+         37.499774748
+        ],
+        [
+         126.999151828,
+         37.499774748
+        ],
+        [
+         126.999151828,
+         37.500225252
+        ],
+        [
+         126.99858638,
+         37.500225252
+        ],
+        [
+         126.99858638,
+         37.499774748
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -2,
+      "row": 0,
+      "centerLon": 126.998869104,
+      "centerLat": 37.5,
+      "cellArea": 2500.0,
+      "domainArea": 1197.42,
+      "domainRatio": 0.478967,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "-1:0",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999151828,
+         37.499774748
+        ],
+        [
+         126.999717276,
+         37.499774748
+        ],
+        [
+         126.999717276,
+         37.500225252
+        ],
+        [
+         126.999151828,
+         37.500225252
+        ],
+        [
+         126.999151828,
+         37.499774748
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -1,
+      "row": 0,
+      "centerLon": 126.999434552,
+      "centerLat": 37.5,
+      "cellArea": 2500.0,
+      "domainArea": 2500.0,
+      "domainRatio": 1.0,
+      "boundary": false,
+      "smallBoundary": false,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "0:0",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999717276,
+         37.499774748
+        ],
+        [
+         127.000282724,
+         37.499774748
+        ],
+        [
+         127.000282724,
+         37.500225252
+        ],
+        [
+         126.999717276,
+         37.500225252
+        ],
+        [
+         126.999717276,
+         37.499774748
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 0,
+      "row": 0,
+      "centerLon": 127.0,
+      "centerLat": 37.5,
+      "cellArea": 2500.0,
+      "domainArea": 2500.0,
+      "domainRatio": 1.0,
+      "boundary": false,
+      "smallBoundary": false,
+      "buildingCount": 1,
+      "primaryBuildingCount": 1,
+      "sumArea": 1600.0,
+      "occupiedArea": 1600.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.64,
+      "coveragePercent": 64.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "1:0",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000282724,
+         37.499774748
+        ],
+        [
+         127.000848172,
+         37.499774748
+        ],
+        [
+         127.000848172,
+         37.500225252
+        ],
+        [
+         127.000282724,
+         37.500225252
+        ],
+        [
+         127.000282724,
+         37.499774748
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 1,
+      "row": 0,
+      "centerLon": 127.000565448,
+      "centerLat": 37.5,
+      "cellArea": 2500.0,
+      "domainArea": 2500.0,
+      "domainRatio": 1.0,
+      "boundary": false,
+      "smallBoundary": false,
+      "buildingCount": 1,
+      "primaryBuildingCount": 1,
+      "sumArea": 800.0,
+      "occupiedArea": 800.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.32,
+      "coveragePercent": 32.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "2:0",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000848172,
+         37.499774748
+        ],
+        [
+         127.00141362,
+         37.499774748
+        ],
+        [
+         127.00141362,
+         37.500225252
+        ],
+        [
+         127.000848172,
+         37.500225252
+        ],
+        [
+         127.000848172,
+         37.499774748
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 2,
+      "row": 0,
+      "centerLon": 127.001130896,
+      "centerLat": 37.5,
+      "cellArea": 2500.0,
+      "domainArea": 1197.42,
+      "domainRatio": 0.478967,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 1,
+      "primaryBuildingCount": 1,
+      "sumArea": 588.56,
+      "occupiedArea": 588.56,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.491527,
+      "coveragePercent": 49.15,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "-2:1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.99858638,
+         37.500225252
+        ],
+        [
+         126.999151828,
+         37.500225252
+        ],
+        [
+         126.999151828,
+         37.500675755
+        ],
+        [
+         126.99858638,
+         37.500675755
+        ],
+        [
+         126.99858638,
+         37.500225252
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -2,
+      "row": 1,
+      "centerLon": 126.998869104,
+      "centerLat": 37.500450503,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "-1:1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999151828,
+         37.500225252
+        ],
+        [
+         126.999717276,
+         37.500225252
+        ],
+        [
+         126.999717276,
+         37.500675755
+        ],
+        [
+         126.999151828,
+         37.500675755
+        ],
+        [
+         126.999151828,
+         37.500225252
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -1,
+      "row": 1,
+      "centerLon": 126.999434552,
+      "centerLat": 37.500450503,
+      "cellArea": 2500.0,
+      "domainArea": 2462.42,
+      "domainRatio": 0.984969,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 1,
+      "primaryBuildingCount": 1,
+      "sumArea": 100.0,
+      "occupiedArea": 100.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.04061,
+      "coveragePercent": 4.06,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "0:1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999717276,
+         37.500225252
+        ],
+        [
+         127.000282724,
+         37.500225252
+        ],
+        [
+         127.000282724,
+         37.500675755
+        ],
+        [
+         126.999717276,
+         37.500675755
+        ],
+        [
+         126.999717276,
+         37.500225252
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 0,
+      "row": 1,
+      "centerLon": 127.0,
+      "centerLat": 37.500450503,
+      "cellArea": 2500.0,
+      "domainArea": 2500.0,
+      "domainRatio": 1.0,
+      "boundary": false,
+      "smallBoundary": false,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "1:1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000282724,
+         37.500225252
+        ],
+        [
+         127.000848172,
+         37.500225252
+        ],
+        [
+         127.000848172,
+         37.500675755
+        ],
+        [
+         127.000282724,
+         37.500675755
+        ],
+        [
+         127.000282724,
+         37.500225252
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 1,
+      "row": 1,
+      "centerLon": 127.000565448,
+      "centerLat": 37.500450503,
+      "cellArea": 2500.0,
+      "domainArea": 2462.42,
+      "domainRatio": 0.984969,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "2:1",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000848172,
+         37.500225252
+        ],
+        [
+         127.00141362,
+         37.500225252
+        ],
+        [
+         127.00141362,
+         37.500675755
+        ],
+        [
+         127.000848172,
+         37.500675755
+        ],
+        [
+         127.000848172,
+         37.500225252
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 2,
+      "row": 1,
+      "centerLon": 127.001130896,
+      "centerLat": 37.500450503,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "-1:2",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999151828,
+         37.500675755
+        ],
+        [
+         126.999717276,
+         37.500675755
+        ],
+        [
+         126.999717276,
+         37.501126258
+        ],
+        [
+         126.999151828,
+         37.501126258
+        ],
+        [
+         126.999151828,
+         37.500675755
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": -1,
+      "row": 2,
+      "centerLon": 126.999434552,
+      "centerLat": 37.500901006,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "0:2",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         126.999717276,
+         37.500675755
+        ],
+        [
+         127.000282724,
+         37.500675755
+        ],
+        [
+         127.000282724,
+         37.501126258
+        ],
+        [
+         126.999717276,
+         37.501126258
+        ],
+        [
+         126.999717276,
+         37.500675755
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 0,
+      "row": 2,
+      "centerLon": 127.0,
+      "centerLat": 37.500901006,
+      "cellArea": 2500.0,
+      "domainArea": 1197.42,
+      "domainRatio": 0.478967,
+      "boundary": true,
+      "smallBoundary": false,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    },
+    {
+     "type": "Feature",
+     "id": "1:2",
+     "geometry": {
+      "type": "Polygon",
+      "coordinates": [
+       [
+        [
+         127.000282724,
+         37.500675755
+        ],
+        [
+         127.000848172,
+         37.500675755
+        ],
+        [
+         127.000848172,
+         37.501126258
+        ],
+        [
+         127.000282724,
+         37.501126258
+        ],
+        [
+         127.000282724,
+         37.500675755
+        ]
+       ]
+      ]
+     },
+     "properties": {
+      "col": 1,
+      "row": 2,
+      "centerLon": 127.000565448,
+      "centerLat": 37.500901006,
+      "cellArea": 2500.0,
+      "domainArea": 534.57,
+      "domainRatio": 0.213828,
+      "boundary": true,
+      "smallBoundary": true,
+      "buildingCount": 0,
+      "primaryBuildingCount": 0,
+      "sumArea": 0.0,
+      "occupiedArea": 0.0,
+      "betweenBuildingOverlapArea": 0.0,
+      "coverageRatio": 0.0,
+      "coveragePercent": 0.0,
+      "buildingIds": null
+     }
+    }
+   ]
+  }
+ }
+}

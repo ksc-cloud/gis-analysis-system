@@ -2109,6 +2109,108 @@ body {
 	}
 }
 
+/* ---------- 격자 밀집도 보기 (8-6B) ---------- */
+
+.grid-view .empty-state[hidden],
+.grid-view .spatial__status[hidden],
+.grid-view .spatial__warnings[hidden],
+.grid-view .building-status__retry[hidden],
+.grid-summary[hidden],
+.grid-detail[hidden] {
+	display: none;
+}
+
+.grid-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.grid-controls__toggle {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+}
+
+.grid-controls__sizes {
+	display: flex;
+	gap: 6px;
+}
+
+.grid-controls__sizes .tool-bar__button {
+	flex: 1;
+}
+
+.grid-controls__sizes [aria-pressed="true"] {
+	border-color: var(--color-accent);
+	background: var(--color-accent-soft);
+	color: var(--color-accent);
+	font-weight: 600;
+}
+
+.grid-summary {
+	margin: 0 0 8px;
+	font-size: 12px;
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.grid-detail {
+	margin: 0 0 12px;
+	padding: 8px 10px;
+	border: 1px solid var(--color-accent);
+	border-radius: var(--radius);
+	background: var(--color-accent-soft);
+	font-size: 12px;
+}
+
+.grid-detail .analysis__subtitle {
+	margin-top: 0;
+}
+
+.grid-detail__list .info-list__row {
+	grid-template-columns: 96px minmax(0, 1fr);
+	padding: 5px 0;
+}
+
+.grid-legend {
+	display: grid;
+	gap: 4px;
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+	font-size: 12px;
+}
+
+.grid-legend__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.grid-legend__swatch {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 12px;
+	border: 1px solid rgba(15, 23, 42, 0.2);
+	border-radius: 2px;
+}
+
+.grid-legend__swatch--boundary {
+	background: repeating-linear-gradient(45deg, rgba(227, 74, 51, 0.45), rgba(227, 74, 51, 0.45) 3px,
+		transparent 3px, transparent 6px);
+}
+
+@media (max-width: 900px) {
+	.grid-controls__toggle,
+	.grid-controls__sizes .tool-bar__button,
+	.grid-view .building-status__retry {
+		min-height: 44px;
+	}
+}
+
 /* ---------- 반응형 ---------- */
 
 @media (max-width: 1200px) {
