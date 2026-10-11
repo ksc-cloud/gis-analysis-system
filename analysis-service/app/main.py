@@ -7,7 +7,7 @@ will proxy internal analysis requests in a later step.
 from fastapi import FastAPI
 
 from app import __version__
-from app.api import errors, health, internal
+from app.api import errors, health, internal, openapi
 from app.config import Settings
 from app.security import InternalApiGuard
 
@@ -27,6 +27,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     errors.install(app)
     app.include_router(health.router)
     app.include_router(internal.router)
+    openapi.install(app, internal.REQUEST_MODELS)
     return app
 
 

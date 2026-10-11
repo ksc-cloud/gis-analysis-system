@@ -118,7 +118,9 @@ class BuildingInput(CamelModel):
     geometry: Geometry
 
 
-class BuildingStatsRequest(CamelModel):
+class RadiusAnalysisRequest(CamelModel):
+    """Fields shared by every internal analysis request: one Java radius analysis result."""
+
     schema_version: Literal[1] = SCHEMA_VERSION
     source: Source | None = None
     center: Center
@@ -126,7 +128,6 @@ class BuildingStatsRequest(CamelModel):
     complete: StrictBool
     incomplete_reasons: Annotated[list[IncompleteReason], Field(max_length=MAX_REASONS)] = []
     java_summary: JavaSummary | None = None
-    include_buildings: StrictBool = True
     buildings: Annotated[list[BuildingInput], Field(max_length=MAX_BUILDINGS)]
 
     @model_validator(mode="after")
@@ -149,6 +150,10 @@ class BuildingStatsRequest(CamelModel):
                                       "total positions {count} exceed the limit {limit}",
                                       {"count": total_points, "limit": MAX_TOTAL_POINTS})
         return self
+
+
+class BuildingStatsRequest(RadiusAnalysisRequest):
+    include_buildings: StrictBool = True
 
 
 # --------------------------------------------------------------------------------------------- response

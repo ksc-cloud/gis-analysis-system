@@ -46,6 +46,8 @@ API docs (development): http://127.0.0.1:8001/docs
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -v
 .\.venv\Scripts\python.exe -m pytest -v -s tests/test_building_stats.py::test_5000_buildings   # prints timing
+.\.venv\Scripts\python.exe -m pytest -v -s tests/test_grid_density.py::test_5000_buildings_1km
+.\.venv\Scripts\python.exe -m pytest -v -s tests/test_grid_density_api.py -k 5000             # timing and response size
 ```
 
 `tests/test_java_real_results.py` compares real Java results saved in `tests/fixtures/real/*.json`
@@ -57,6 +59,11 @@ API docs (development): http://127.0.0.1:8001/docs
 |---|---|---|---|
 | GET | `/health` | none | `200 {"status":"ok"}` (liveness only, no external checks) |
 | POST | `/internal/v1/building-stats` | `X-Internal-Token` | building statistics of one radius analysis |
+| POST | `/internal/v1/grid-density` | `X-Internal-Token` | building density per 50/100/200 m grid cell (GeoJSON) |
+
+`/docs` shows the request and response schemas of both internal endpoints. Use **Authorize** to enter the
+`X-Internal-Token` value; the check itself is still done by the middleware (`app/security.py`), so the documentation
+does not change authentication, the size limit or the error format.
 
 ### POST /internal/v1/building-stats
 
@@ -105,6 +112,97 @@ largest gap 0.075 m). `withinRadius.unionArea` can be low by at most `method.cir
 building crossing the circle the loss is at most about gap × crossing length; measured on 400 random squares per
 case: 5 m squares at r = 1000 m lose up to 0.37 m² (a sliver that barely enters the circle can lose most of its
 small area), 50 m squares at r = 1000 m up to 2.5 m².
+
+### POST /internal/v1/grid-density
+
+The same request as building-stats (without `includeBuildings`) plus grid options:
+
+```json
+{
+  "center": {"lon": 126.978, "lat": 37.5665},
+  "radiusMeters": 300,
+  "complete": true,
+  "incompleteReasons": [],
+  "cellSizeMeters": 100,
+  "includeEmptyCells": true,
+  "includeCellBuildingIds": false,
+  "buildings": [{"id": "bd:1111010100100010000000001", "geometry": {"type": "MultiPolygon", "coordinates": ["..."]}}]
+}
+```
+
+| Field | Rule |
+|---|---|
+| `cellSizeMeters` | required, integer `50`, `100` or `200` (`100.0`, `"100"` and other sizes are rejected) |
+| `includeEmptyCells` | default `true`; `false` leaves out cells without buildings (totals still use every cell) |
+| `includeCellBuildingIds` | default `false`; `true` fills `properties.buildingIds` (otherwise `null`) |
+
+Response (abridged; 42 synthetic buildings, r = 300 m, 100 m cells):
+
+```json
+{
+  "schemaVersion": 1, "cellSizeMeters": 100, "radiusMeters": 300,
+  "method": {"...": "same as building-stats"},
+  "grid": {"cellSizeMeters": 100, "cellArea": 10000.0, "origin": "CELL_CENTERED_AT_ANALYSIS_CENTER",
+           "columns": [-3, 3], "rows": [-3, 3], "cellCount": 45, "returnedCellCount": 45, "emptyCellCount": 19,
+           "boundaryCellCount": 24, "smallBoundaryCellCount": 8, "smallBoundaryRatio": 0.25,
+           "minBuildingAreaInCell": 0.01, "description": "...", "comparisonWithBuildingStats": "..."},
+  "counts": {"...": "same as building-stats"},
+  "summary": {"domainArea": 282743.34, "sumArea": 14096.7, "occupiedArea": 13762.06, "coverageRatio": 0.048673,
+              "coveragePercent": 4.87, "occupiedCellCount": 26, "primaryBuildingCount": 38, "primaryByNearestCell": 0},
+  "consistency": {"withinRadiusUnionArea": 13762.06, "occupiedAreaCalculationDifference": 1.8189894035458565e-12,
+                  "occupiedAreaDisplayDifference": -0.01, "occupiedAreaMatches": true, "circleArea": 282743.34,
+                  "domainAreaCalculationDifference": 0.0, "domainAreaDisplayDifference": 0.02,
+                  "analyzedBuildings": 38, "primaryBuildingTotal": 38, "primaryMatchesAnalyzed": true,
+                  "description": "..."},
+  "completeness": {"...": "scope and notes"},
+  "warnings": [{"code": "OUTSIDE_RADIUS"}, {"code": "BETWEEN_BUILDING_OVERLAP"}, {"code": "SMALL_BOUNDARY_CELLS"}],
+  "excluded": ["..."],
+  "cells": {"type": "FeatureCollection", "features": [
+    {"type": "Feature", "id": "1:0",
+     "geometry": {"type": "Polygon", "coordinates": [[[126.97856595, 37.566049502], [126.979697851, 37.566049502],
+                  [126.979697851, 37.566950498], [126.97856595, 37.566950498], [126.97856595, 37.566049502]]]},
+     "properties": {"col": 1, "row": 0, "centerLon": 126.979131901, "centerLat": 37.5665, "cellArea": 10000.0,
+                    "domainArea": 10000.0, "domainRatio": 1.0, "boundary": false, "smallBoundary": false,
+                    "buildingCount": 4, "primaryBuildingCount": 3, "sumArea": 1331.04, "occupiedArea": 1181.04,
+                    "betweenBuildingOverlapArea": 150.0, "coverageRatio": 0.118104, "coveragePercent": 11.81,
+                    "buildingIds": null}}]}
+}
+```
+
+### Grid calculation
+
+| Item | Rule |
+|---|---|
+| Grid | Squares on the same local tangent plane as the analysis. Cell `(col, row)` covers x `[(col − ½)s, (col + ½)s]`, y `[(row − ½)s, (row + ½)s]`: cell `(0, 0)` is centered on the analysis center, `col` grows east and `row` north. Feature id `"col:row"`, cells ordered by row then column (south-west first) |
+| Cells | Every cell sharing area with the true circle (> 10⁻⁶ m²). Boundary cells are returned as full squares |
+| `domainArea` | Exact area of cell ∩ true circle (closed form, `app/geo/grid.py`), the denominator of `coverageRatio`. All domains add up to πr² |
+| `occupiedArea` | Area of the building-stats `withinRadius` union inside the cell: overlaps between buildings count once. All cells add up to `withinRadius.unionArea` |
+| `sumArea` / `betweenBuildingOverlapArea` | Sum of the building parts in the cell (overlaps repeated) / `sumArea − occupiedArea` |
+| `buildingCount` | Buildings with at least 0.01 m² inside the circle and the cell; a building across several cells counts in each |
+| `primaryBuildingCount` | Every analyzed building exactly once, in the cell with its largest part inside the circle (parts within 10⁻⁶ m² are equal: first cell in grid order). A PARTIAL building with no area inside the circle goes to the cell nearest to its point closest to the center (`summary.primaryByNearestCell`). The total equals `counts.analyzed` |
+| `boundary` / `smallBoundary` | `domainArea` < cell area / `domainArea` < 25 % of the cell area (`SMALL_BOUNDARY_CELLS` warning: the small denominator makes the ratio unstable) |
+| GeoJSON | Cell corners converted back with the inverse of the same projection, WGS84 lon/lat rounded to 9 decimals (≈ 0.1 mm), exterior ring counterclockwise (RFC 7946) |
+| Spatial index | Shapely `STRtree` over the union parts and over the clipped buildings, queried with all cell boxes at once |
+
+**Consistency.** Internal totals use unrounded values. `consistency.*CalculationDifference` is the unrounded cell
+total minus the reference (`withinRadius.unionArea` or πr²): real floating point / geometry error, below 10⁻⁷ m²
+in the tests (`occupiedAreaMatches` is true within 0.001 m²). `consistency.*DisplayDifference` is the sum of the
+displayed (0.01 m² rounded) cell values minus the displayed reference: rounding only, up to 0.005 m² per cell.
+
+**Differences from building-stats.** Building selection, repair, INSIDE/PARTIAL/OUTSIDE decision and the 256-gon
+clipping are the same code (`app/services/radius_analysis.py`); `counts`, `method`, `excluded` are identical, and the
+overall `summary.coverageRatio` equals `withinRadius.coverageRatio`. Differences: (1) in boundary cells the numerator
+is clipped with the 256-gon while the denominator uses the true circle, the same convention as the overall coverage,
+so boundary cells can be slightly low; (2) `buildingCount` adds up to more than `counts.analyzed` when buildings cross
+cell lines (use `primaryBuildingCount` for totals); (3) PARTIAL buildings with no area inside the circle appear only
+in `primaryBuildingCount`; (4) no floor statistics. The response repeats this in `grid.comparisonWithBuildingStats`.
+
+**Partial results.** When `complete` is false, `completeness.scope` is `OBSERVED_BUILDINGS_ONLY`, the first warning is
+`PARTIAL_RESULT`, and the notes cover the cell counts, areas and coverage: an empty cell may only be unobserved, and
+the cell values must not be shown as the density of the whole area.
+
+Measured (5000 buildings, r = 1000 m, end to end through the API): 50 m cells 1345 cells, 0.75 s, 979 KiB
+(1053 KiB with building ids); 100 m 357 cells, 0.67 s, 419 KiB; 200 m 101 cells, 0.62 s, 273 KiB.
 
 ### Errors (`{"error", "message", "details"?}`, never containing submitted values)
 
