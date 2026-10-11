@@ -1,0 +1,5 @@
+# Runtime dependencies (verified on Python 3.14.8). Direct dependencies only, pinned.
+fastapi==0.143.0
+uvicorn==0.54.0
+numpy==2.5.4
+shapely==2.2.0
