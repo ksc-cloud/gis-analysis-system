@@ -35,8 +35,12 @@ class HomeControllerTests {
 				(contentType) -> assertThat(contentType).startsWith("text/html"));
 		assertThat(response.body())
 			.contains("<h1 class=\"app-header__title\">GIS 3D 지도</h1>")
-			.contains("gis-analysis-system")
-			.contains("JSP 화면이 정상적으로 실행되었습니다.")
+			.contains("class=\"app-header__logo\"")
+			.contains("<title>GIS 3D 지도 | gis-analysis-system</title>")
+			// The header shows only the logo and the title (no subtitle or status text).
+			.doesNotContain("app-header__subtitle")
+			.doesNotContain("status-badge")
+			.doesNotContain("JSP 화면이 정상적으로 실행되었습니다.")
 			.doesNotContain("<c:");
 	}
 
@@ -132,6 +136,19 @@ class HomeControllerTests {
 				(contentType) -> assertThat(contentType).contains("javascript"));
 		assertThat(response.body()).contains("gis:analysisresult").contains("/api/analyses").contains("textContent");
 		assertThat(get("/").body()).doesNotContain("map-history.js").contains("id=\"tab-history\"");
+	}
+
+	@Test
+	void searchScriptIsServedAndTheMapHidesTheVWorldMeasureButtons() throws Exception {
+		HttpResponse<String> search = get("/js/map-search.js");
+
+		assertThat(search.statusCode()).isEqualTo(200);
+		assertThat(search.body()).contains("/api/search").contains("gis:measurereset").contains("startAt");
+		assertThat(get("/js/vworld-map.js").body()).contains("isZoomControl: true").contains("navigation: true");
+		assertThat(get("/js/main.js").body()).contains("keepKeysInFields");
+		// Without a key the map scripts are not loaded, so the search form stays disabled.
+		assertThat(get("/").body()).doesNotContain("map-search.js")
+			.contains("id=\"map-search-input\" class=\"search-form__input\"");
 	}
 
 	@Test

@@ -2,6 +2,7 @@
  * GIS 3D 지도 - 레이아웃 제어
  * - 넓은 화면: 사이드바/정보 패널을 접고 펼친다.
  * - 작은 화면(900px 이하): 사이드바/정보 패널을 슬라이드 패널로 열고 닫는다.
+ * - 입력칸에서 누른 키가 VWorld 지도 단축키로 전달되지 않게 한다. (아래 keepKeysInFields)
  */
 (function () {
 	'use strict';
@@ -95,6 +96,25 @@
 			syncState();
 		});
 	}
+
+	/*
+	 * VWorld 지도는 오른쪽 조작 막대가 보이는 동안 document에 키보드 처리기를 붙인다. (방향키: 이동, Home/End: 확대·축소,
+	 * PageUp/PageDown·Insert/Delete: 회전) 포커스 위치를 확인하지 않으므로 검색어·제목·반경을 입력할 때 지도가 움직인다.
+	 * 앱 안의 입력칸에서 누른 키는 document까지 올라가지 않게 막는다. 글자 편집(기본 동작)은 그대로이고,
+	 * Esc(패널 닫기, 측정 취소)는 전달한다. 입력칸 밖(지도, 버튼)에서의 지도 단축키는 영향받지 않는다.
+	 */
+	function isEditableField(target) {
+		return !!target && (/^(input|textarea|select)$/i.test(target.tagName || '') || target.isContentEditable === true);
+	}
+
+	function keepKeysInFields(event) {
+		if (event.key !== 'Escape' && isEditableField(event.target)) {
+			event.stopPropagation();
+		}
+	}
+
+	app.addEventListener('keydown', keepKeysInFields);
+	app.addEventListener('keyup', keepKeysInFields);
 
 	document.addEventListener('keydown', function (event) {
 		if (event.key === 'Escape' && isMobile()) {

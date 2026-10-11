@@ -156,7 +156,11 @@
 				mapId: MAP_ID,
 				initPosition: cameraPosition(POSITIONS.korea),
 				logo: true,
-				navigation: true
+				// 오른쪽 VWorld 조작 막대(나침반, 현재위치, 확대·축소, 초기화면, 이동컨트롤)는 유지한다.
+				navigation: true,
+				// 막대의 거리·면적·높이·초기화 묶음은 만들지 않는다. (VWViewerStartup.v30: new vw.NavigationZoom(el, isZoomControl))
+				// 측정은 왼쪽 지도 도구가 유일한 진입점이고, 막대의 초기화(vw.Map.clear)는 분석 도형 복원 없이 모두 지우기 때문이다.
+				isZoomControl: true
 			});
 			vw.ws3dInitCallBack = onMapReady;
 			initTimer = setTimeout(function () {

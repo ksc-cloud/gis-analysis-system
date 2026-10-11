@@ -90,6 +90,50 @@ class HomeControllerVWorldTests {
 	}
 
 	@Test
+	void homeRendersTheSearchFormAndLoadsTheSearchScriptBeforeTheMap() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		int historyScript = body.indexOf("/js/map-history.js");
+		int searchScript = body.indexOf("/js/map-search.js");
+		int toolsScript = body.indexOf("/js/map-tools.js");
+		int mapScript = body.indexOf("/js/vworld-map.js");
+		// map-search.js uses window.gisAnalysis.startAt and must not miss gis:mapready.
+		assertThat(searchScript).isGreaterThan(historyScript);
+		assertThat(toolsScript).isGreaterThan(searchScript);
+		assertThat(mapScript).isGreaterThan(searchScript);
+		assertThat(body).contains("data-api-url=\"/api/search\"")
+			.contains("id=\"map-search-type\"")
+			.contains("<option value=\"place\">장소·건물명</option>")
+			.contains("<option value=\"road\">도로명 주소</option>")
+			.contains("<option value=\"parcel\">지번 주소</option>")
+			.contains("id=\"map-search-results\"")
+			.contains("id=\"map-search-pager\"")
+			.contains("id=\"map-search-radius\"")
+			.contains("id=\"map-search-clear\"")
+			.doesNotContain("검색 기능은 준비 중입니다.");
+	}
+
+	@Test
+	void homeRendersTheToolBarToggleWithAccessibilityAttributes() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		assertThat(body).contains("id=\"tool-bar-toggle\" aria-expanded=\"true\"")
+			.contains("aria-controls=\"tool-bar-body\" aria-label=\"지도 도구 패널 접기\"")
+			.contains("id=\"tool-bar-summary\" role=\"status\" aria-live=\"polite\" hidden")
+			// The default mode (building selection) is shown as active before the map is ready.
+			.contains("class=\"map-tools__button is-active\" data-mode=\"select\" aria-pressed=\"true\"")
+			.contains("class=\"map-tools__button\" data-mode=\"distance\" aria-pressed=\"false\"");
+		// The title row stays visible; only the body (notice, radius controls, message, actions) is collapsed.
+		int title = body.indexOf("id=\"tool-bar-title\"");
+		int toolBarBody = body.indexOf("id=\"tool-bar-body\"");
+		assertThat(title).isLessThan(toolBarBody);
+		assertThat(toolBarBody).isLessThan(body.indexOf("id=\"radius-controls\""));
+		assertThat(toolBarBody).isLessThan(body.indexOf("id=\"radius-run\""));
+	}
+
+	@Test
 	void homeRendersMapToolsAndLayers() throws Exception {
 		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
 		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();

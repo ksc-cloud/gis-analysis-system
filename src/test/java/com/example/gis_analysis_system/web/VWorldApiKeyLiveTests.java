@@ -15,7 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import com.example.gis_analysis_system.vworld.BuildingLookupResult;
+import com.example.gis_analysis_system.vworld.SearchResult;
 import com.example.gis_analysis_system.vworld.VWorldBuildingClient;
+import com.example.gis_analysis_system.vworld.VWorldSearchClient;
 
 import tools.jackson.databind.json.JsonMapper;
 
@@ -78,6 +80,25 @@ class VWorldApiKeyLiveTests {
 		assertThat(page.features()).isNotEmpty().allSatisfy((feature) -> assertThat(feature.hasGeometry()).isTrue());
 		System.out.println("[vworld-live] LT_C_SPBD within 100 m: total " + page.reportedTotal() + ", pages "
 				+ page.totalPages());
+	}
+
+	/**
+	 * Confirms that the real Search API 2.0 response (place search) can be parsed into results with coordinates.
+	 */
+	@Test
+	void searchApiResponseCanBeParsed() {
+		VWorldSearchClient client = new VWorldSearchClient(JsonMapper.builder().build(), System.getenv("VWORLD_API_KEY"),
+				System.getenv().getOrDefault("VWORLD_DOMAIN", "http://localhost:8080"));
+
+		SearchResult result = client.search("서울특별시청", VWorldSearchClient.SearchType.PLACE, 1);
+
+		assertThat(result.found()).isTrue();
+		assertThat(result.items()).isNotEmpty().allSatisfy((item) -> {
+			assertThat(item.title()).isNotBlank();
+			assertThat(item.lon()).isBetween(124.0, 132.0);
+			assertThat(item.lat()).isBetween(33.0, 39.0);
+		});
+		System.out.println("[vworld-live] search place: total " + result.totalCount() + ", first " + result.items().get(0).title());
 	}
 
 	private String loadLoader(String apiKey) throws Exception {

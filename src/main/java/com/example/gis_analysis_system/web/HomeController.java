@@ -26,7 +26,6 @@ public class HomeController {
 	public String home(Model model) {
 		model.addAttribute("applicationName", applicationName);
 		model.addAttribute("pageTitle", "GIS 3D 지도");
-		model.addAttribute("message", "JSP 화면이 정상적으로 실행되었습니다.");
 
 		boolean vworldEnabled = StringUtils.hasText(vworldApiKey);
 		model.addAttribute("vworldEnabled", vworldEnabled);

@@ -11,6 +11,9 @@
  * - 같은 결과 화면으로 저장된 분석(GET /api/analyses/{id}의 result)도 보여 준다. (7단계, showSaved)
  *   저장본은 보라/분홍 도형, "저장된 분석" 문구와 안내 띠, 지도 위 표시 막대로 실시간 결과와 구분한다.
  * - 결과가 바뀔 때마다 'gis:analysisresult' 이벤트를 보낸다. (저장/이력 API 통신은 map-history.js 담당)
+ * - 지도 위 공통 패널(#tool-bar)의 접기/펼치기는 map-tools.js가 관리한다. 이 파일은 반경 분석 요약 문구를
+ *   'gis:toolbarsummary' 이벤트로 보내고, 검색의 "이 위치로 반경 분석"과 저장본의 "같은 범위로 다시 분석"에서만
+ *   window.gisTools.setCollapsed(false)로 패널을 펼친다.
  */
 (function () {
 	'use strict';
@@ -218,6 +221,31 @@
 		if (el.openResults) {
 			el.openResults.hidden = !(isMobile() && (state.status === 'done' || state.status === 'error'));
 		}
+		publishSummary();
+	}
+
+	/* ---------- 공통 패널 요약 / 자동 펼침 (상태는 map-tools.js) ---------- */
+
+	// 접힌 패널의 한 줄 요약: 현재 반경과 분석 상태 (제목 "반경 분석"은 #tool-bar-title이 표시)
+	function collapsedStatusText() {
+		if (state.status === 'done' && state.result) {
+			var count = '건물 ' + state.result.summary.intersecting + '개' + (state.result.complete ? '' : ' (부분 결과)');
+			return state.source === 'saved' ? '저장된 분석 · ' + count : '분석 완료 · ' + count;
+		}
+		return { idle: '중심점 미선택', preview: '분석 전', loading: '분석 중...', error: '분석 실패' }[state.status] || '';
+	}
+
+	// 패널이 접혀 있을 때 map-tools.js가 반경 분석 모드의 요약으로 보여 줄 문구를 보낸다.
+	function publishSummary() {
+		document.dispatchEvent(new CustomEvent('gis:toolbarsummary', {
+			detail: { mode: 'radius', text: '반경 ' + formatRadius(state.radius) + ' · ' + collapsedStatusText() }
+		}));
+	}
+
+	function expandToolBar() {
+		if (window.gisTools && typeof window.gisTools.setCollapsed === 'function') {
+			window.gisTools.setCollapsed(false);
+		}
 	}
 
 	function countText(result) {
@@ -358,6 +386,32 @@
 		}
 		state.center = center;
 		showPreview('');
+	}
+
+	/*
+	 * 지도 검색 등에서 고른 지점을 반경 분석 중심점으로 정한다. (map-search.js "이 위치로 반경 분석")
+	 * 지도 클릭으로 중심점을 고른 것과 같은 흐름이다: 반경 분석 모드로 전환하고, 이전 결과를 지우고, 미리보기 원만 그린다.
+	 * 현재 반경 설정은 유지하며, 분석 API는 사용자가 "분석 실행"을 눌러야 호출된다.
+	 */
+	function startAt(point) {
+		if (!point || !isFinite(point.lon) || !isFinite(point.lat) || !renderer || !renderer.isSupported()) {
+			return false;
+		}
+		var center = { lon: Number(Number(point.lon).toFixed(7)), lat: Number(Number(point.lat).toFixed(7)) };
+		if (!inKorea(center) || !map) {
+			return false;
+		}
+		if (window.gisTools && mode() !== 'radius') {
+			window.gisTools.setMode('radius');
+		}
+		if (mode() !== 'radius') {
+			return false;
+		}
+		// 안내대로 "분석 실행"을 누를 수 있게 접혀 있던 패널을 펼친다. (표시만 변경)
+		expandToolBar();
+		state.center = center;
+		showPreview('검색 위치를 중심점으로 정했습니다. 반경을 확인하고 "분석 실행"을 누르세요.');
+		return true;
 	}
 
 	function setRadius(value) {
@@ -546,6 +600,8 @@
 		if (window.gisTools && mode() !== 'radius') {
 			window.gisTools.setMode('radius');
 		}
+		// 다시 분석하는 동안의 상태와 결과를 볼 수 있게 접혀 있던 패널을 펼친다. (표시만 변경)
+		expandToolBar();
 		run();
 	}
 
@@ -961,6 +1017,8 @@
 		getCurrent: current,
 		showSaved: showSaved,
 		clearSaved: clearSaved,
+		// 지도 검색 모듈(map-search.js)용: 중심점만 정하고 분석은 실행하지 않는다.
+		startAt: startAt,
 		showTab: showTab,
 		openInfoPanel: openInfoPanel,
 		formatDateTime: formatDateTime,

@@ -21,14 +21,10 @@
 			<span class="app-header__logo" aria-hidden="true">3D</span>
 			<div class="app-header__titles">
 				<h1 class="app-header__title"><c:out value="${pageTitle}" default="GIS 3D 지도"/></h1>
-				<span class="app-header__subtitle"><c:out value="${applicationName}"/></span>
 			</div>
 		</div>
 
 		<div class="app-header__actions">
-			<c:if test="${not empty message}">
-				<p class="status-badge" id="status-message"><c:out value="${message}"/></p>
-			</c:if>
 			<button type="button" class="panel-toggle" id="info-panel-toggle"
 					aria-controls="info-panel" aria-expanded="false" aria-label="정보 패널 열기/닫기">
 				<span class="panel-toggle__icon" aria-hidden="true">&#9432;</span>
@@ -38,15 +34,38 @@
 	</header>
 
 	<aside class="sidebar panel" id="sidebar" aria-label="지도 메뉴">
-		<section class="panel-section" aria-labelledby="search-title">
+		<section class="panel-section search" aria-labelledby="search-title">
 			<h2 class="panel-section__title" id="search-title">지도 검색</h2>
-			<form class="search-form" id="map-search-form">
-				<label class="visually-hidden" for="map-search-input">주소 또는 건물명</label>
-				<input type="search" id="map-search-input" class="search-form__input"
-					   placeholder="주소 또는 건물명 검색" disabled>
-				<button type="submit" class="search-form__button" disabled>검색</button>
+			<form class="search-form" id="map-search-form" novalidate>
+				<label class="visually-hidden" for="map-search-type">검색 유형</label>
+				<select id="map-search-type" class="search-form__type" disabled>
+					<option value="place">장소·건물명</option>
+					<option value="road">도로명 주소</option>
+					<option value="parcel">지번 주소</option>
+				</select>
+				<div class="search-form__row">
+					<label class="visually-hidden" for="map-search-input">검색어</label>
+					<input type="search" id="map-search-input" class="search-form__input"
+						   placeholder="예: 서울특별시청, 세종대로 110" autocomplete="off" disabled>
+					<button type="submit" class="search-form__button" id="map-search-button" disabled>검색</button>
+				</div>
 			</form>
-			<p class="panel-hint">검색 기능은 준비 중입니다.</p>
+			<p class="panel-hint" id="map-search-hint">지도가 표시되면 사용할 수 있습니다.</p>
+			<p class="search__status" id="map-search-status" role="status" aria-live="polite" hidden></p>
+			<ol class="search__results" id="map-search-results"></ol>
+			<nav class="search__pager" id="map-search-pager" aria-label="검색 결과 페이지" hidden>
+				<button type="button" class="tool-bar__button" id="map-search-prev">이전</button>
+				<span class="search__page" id="map-search-page"></span>
+				<button type="button" class="tool-bar__button" id="map-search-next">다음</button>
+			</nav>
+			<div class="search__selected" id="map-search-selected" hidden>
+				<p class="search__selected-label">검색 위치</p>
+				<p class="search__selected-text" id="map-search-selected-text"></p>
+				<div class="search__selected-actions">
+					<button type="button" class="tool-bar__button tool-bar__button--primary" id="map-search-radius">이 위치로 반경 분석</button>
+					<button type="button" class="tool-bar__button" id="map-search-clear">검색 위치 지우기</button>
+				</div>
+			</div>
 		</section>
 
 		<section class="panel-section" aria-labelledby="quick-move-title">
@@ -61,7 +80,7 @@
 		<section class="panel-section" aria-labelledby="tools-title">
 			<h2 class="panel-section__title" id="tools-title">지도 도구</h2>
 			<div class="map-tools" id="map-tools" role="group" aria-label="지도 도구 모드">
-				<button type="button" class="map-tools__button" data-mode="select" aria-pressed="true" disabled>건물 선택</button>
+				<button type="button" class="map-tools__button is-active" data-mode="select" aria-pressed="true" disabled>건물 선택</button>
 				<button type="button" class="map-tools__button" data-mode="distance" aria-pressed="false" disabled>거리 측정</button>
 				<button type="button" class="map-tools__button" data-mode="area" aria-pressed="false" disabled>면적 측정</button>
 				<button type="button" class="map-tools__button" data-mode="coord" aria-pressed="false" disabled>좌표 조회</button>
@@ -98,7 +117,13 @@
 			<div class="tool-bar__head">
 				<strong class="tool-bar__title" id="tool-bar-title"></strong>
 				<span class="tool-bar__guide" id="tool-bar-guide"></span>
+				<%-- 패널을 접었을 때만 보이는 현재 모드의 요약 (map-tools.js, 반경 분석 문구는 map-analysis.js가 전달) --%>
+				<span class="tool-bar__collapsed-summary" id="tool-bar-summary" role="status" aria-live="polite" hidden></span>
+				<%-- 접기/펼치기: 거리·면적·좌표·반경 모드 공통 (건물 선택 모드에서는 패널 자체를 표시하지 않음) --%>
+				<button type="button" class="tool-bar__toggle" id="tool-bar-toggle" aria-expanded="true"
+						aria-controls="tool-bar-body" aria-label="지도 도구 패널 접기">접기 &#9650;</button>
 			</div>
+			<div class="tool-bar__body" id="tool-bar-body">
 			<p class="tool-bar__notice" id="tool-bar-notice"></p>
 			<div class="tool-bar__coord" id="coord-result" hidden>
 				<output class="tool-bar__coord-text" id="coord-text"></output>
@@ -132,6 +157,7 @@
 				<button type="button" class="tool-bar__button" id="tool-cancel" hidden>그리기 취소</button>
 				<button type="button" class="tool-bar__button" id="tool-reset" hidden>결과 초기화</button>
 				<button type="button" class="tool-bar__button tool-bar__button--primary" id="tool-exit">건물 선택으로</button>
+			</div>
 			</div>
 		</div>
 
@@ -332,6 +358,9 @@
 	<%-- 분석 결과 저장, 분석 이력(목록/다시 보기/삭제): /api/analyses 통신 담당 --%>
 	<script src="${pageContext.request.contextPath}/js/map-history.js"
 			data-api-url="${pageContext.request.contextPath}/api/analyses"></script>
+	<%-- 지도 검색: /api/search 통신, 검색 위치 마커, "이 위치로 반경 분석"(window.gisAnalysis.startAt) --%>
+	<script src="${pageContext.request.contextPath}/js/map-search.js"
+			data-api-url="${pageContext.request.contextPath}/api/search"></script>
 	<script src="${pageContext.request.contextPath}/js/map-tools.js"></script>
 	<script src="${pageContext.request.contextPath}/js/map-layers.js"></script>
 	<script src="${pageContext.request.contextPath}/js/vworld-map.js"></script>

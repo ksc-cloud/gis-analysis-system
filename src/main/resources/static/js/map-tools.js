@@ -6,9 +6,15 @@
  * - 한 번에 하나의 모드만 활성화하고, 변경 시 'gis:modechange' 이벤트를 발생시킨다.
  * - 측정은 VWorld 기본 기능(vw.MeasureLine / vw.MeasureArea)을 사용하고 결과는 VWorld 라벨로 표시한다.
  *   start(): 그리기 시작, clear(): 진행 중인 그리기 취소(+stop), 완료: 마우스 오른쪽 버튼.
- * - 결과 초기화는 vw.Map.clear()를 사용한다. (지도에 그린 객체 전체를 지운다)
- *   반경 분석 도형도 함께 지워지므로 초기화 후 gis:measurereset 이벤트를 발생시켜 복구하게 한다.
+ * - 결과 초기화는 vw.Map.clear()를 사용한다. (측정 결과만 지우는 공개 API가 없어 지도에 그린 객체 전체를 지운다)
+ *   반경 분석 도형(저장본 포함)과 검색 마커도 함께 지워지므로 초기화 후 gis:measurereset 이벤트를 보내
+ *   각 모듈(map-analysis.js, map-search.js)이 즉시 다시 그리게 한다. 사용자 입장에서는 측정 결과만 지워진다.
+ * - 측정의 진입점은 이 메뉴뿐이다. (vworld-map.js: VWorld 오른쪽 막대의 측정·초기화 묶음은 isZoomControl로 만들지 않음)
  * - 좌표 조회는 vw.Map.onClick 콜백의 cartographic(라디안)을 WGS84 경위도로 변환한다.
+ * - 지도 위 공통 패널(#tool-bar)의 접기/펼치기 상태는 이 파일 한 곳에서 관리한다. (거리·면적·좌표·반경 모드 공통,
+ *   건물 선택 모드에서는 패널을 표시하지 않음) 접힌 상태는 모드를 바꿔도 유지하고, 새로 고치면 펼침으로 시작한다.
+ *   접으면 현재 모드의 요약을 보여 준다. 반경 분석 요약은 map-analysis.js가 'gis:toolbarsummary' 이벤트로 보낸다.
+ *   터치 기기에서 거리·면적 측정으로 들어가면 "완료" 버튼을 쓸 수 있게 자동으로 펼친다.
  */
 (function () {
 	'use strict';
@@ -59,7 +65,9 @@
 		restart: document.getElementById('tool-restart'),
 		cancel: document.getElementById('tool-cancel'),
 		barReset: document.getElementById('tool-reset'),
-		exit: document.getElementById('tool-exit')
+		exit: document.getElementById('tool-exit'),
+		toggle: document.getElementById('tool-bar-toggle'),
+		summary: document.getElementById('tool-bar-summary')
 	};
 
 	if (!el.bar || !el.buttons.length) {
@@ -70,6 +78,11 @@
 	var mode = 'select';
 	var registered = false;
 	var lastCoordText = '';
+	var collapsed = false;
+	// 거리·면적 측정 진행 상태(요약용): '' | 'drawing' | 'cancelled' | 'completed' | 'failed'
+	var measureState = '';
+	// 다른 모듈이 보내 준 모드별 요약 문구 (현재는 반경 분석)
+	var externalSummaries = {};
 
 	function isTouchDevice() {
 		var coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
@@ -97,12 +110,15 @@
 		}
 		try {
 			api.start();
+			measureState = 'drawing';
 			setMessage('');
 		} catch (e) {
 			console.error('[GIS 3D 지도] 측정 시작 실패', e);
 			cancelDrawing();
+			measureState = 'failed';
 			setMessage('측정을 시작하지 못했습니다. 다시 시도하세요.');
 		}
+		renderSummary();
 	}
 
 	// 진행 중인 그리기만 취소한다. 완료된 측정 결과(라벨/도형)는 남는다.
@@ -135,6 +151,8 @@
 		try {
 			// 진행 중인 그리기가 없으면 엔진에서 아무 동작도 하지 않는다.
 			objectManager.completeDrawing();
+			measureState = 'completed';
+			renderSummary();
 			setMessage('완료 처리를 요청했습니다. 결과 라벨을 확인하고, 다시 측정하려면 "새 측정"을 누르세요.');
 		} catch (e) {
 			console.warn('[GIS 3D 지도] 실험적 완료 처리 실패', e);
@@ -183,6 +201,7 @@
 		el.coordText.textContent = text;
 		el.coordResult.hidden = false;
 		setMessage('');
+		renderSummary();
 	}
 
 	function copyCoordinate() {
@@ -230,6 +249,7 @@
 		el.bar.hidden = !info;
 		el.bar.setAttribute('data-mode', mode);
 		if (!info) {
+			renderSummary();
 			return;
 		}
 		var touch = isTouchDevice();
@@ -244,6 +264,53 @@
 		setMessage(measuring && touch
 			? '터치 기기의 완료 버튼은 실험적 기능이며 동작이 검증되지 않았습니다.'
 			: '');
+		renderSummary();
+	}
+
+	/* ---------- 공통 패널 접기/펼치기 ---------- */
+
+	// 접힌 패널의 한 줄 요약. 측정값/지점 수는 VWorld 내부 라벨이라 알 수 없으므로 진행 상태와 사용 방법만 보여 준다.
+	function summaryText() {
+		if (MEASURE_MODES[mode]) {
+			if (measureState === 'cancelled') {
+				return '그리기 취소됨 · 펼쳐서 "새 측정"으로 다시 시작';
+			}
+			if (measureState === 'completed') {
+				return '완료 처리됨 · 펼쳐서 "새 측정"으로 다시 시작';
+			}
+			if (measureState === 'failed') {
+				return '측정을 시작하지 못함 · 펼쳐서 안내 확인';
+			}
+			return isTouchDevice()
+				? '측정 중 · 탭: 지점 추가, 펼쳐서 "완료" 버튼 사용'
+				: '측정 중 · 클릭: 지점 추가, 오른쪽 버튼: 완료';
+		}
+		if (mode === 'coord') {
+			return lastCoordText ? '위도, 경도 ' + lastCoordText : '지도를 클릭하면 좌표를 표시합니다';
+		}
+		return externalSummaries[mode] || '';
+	}
+
+	function renderSummary() {
+		if (!el.summary) {
+			return;
+		}
+		var visible = collapsed && !!MODE_INFO[mode];
+		el.summary.hidden = !visible;
+		el.summary.textContent = visible ? summaryText() : '';
+	}
+
+	// 표시만 바꾼다: 지도 모드, 측정 결과, 분석 결과, 검색 마커, 저장본은 그대로이고 API도 호출하지 않는다.
+	function setCollapsed(value) {
+		collapsed = !!value;
+		el.bar.classList.toggle('is-collapsed', collapsed);
+		if (el.toggle) {
+			el.toggle.setAttribute('aria-expanded', String(!collapsed));
+			el.toggle.setAttribute('aria-label', collapsed ? '지도 도구 패널 펼치기' : '지도 도구 패널 접기');
+			// 버튼의 접근성 이름은 aria-label이 정하므로 화살표는 보이는 문구에만 쓴다.
+			el.toggle.textContent = collapsed ? '펼치기 \u25BC' : '접기 \u25B2';
+		}
+		renderSummary();
 	}
 
 	function setMode(next) {
@@ -262,8 +329,13 @@
 		}
 		mode = next;
 		lastCoordText = '';
+		measureState = '';
 		renderMode();
 		if (MEASURE_MODES[mode]) {
+			if (isTouchDevice()) {
+				// 터치 기기는 "완료 (실험적)" 버튼으로만 측정을 끝낼 수 있으므로 패널을 펼친다.
+				setCollapsed(false);
+			}
 			startMeasure();
 		}
 		document.dispatchEvent(new CustomEvent('gis:modechange', { detail: { mode: mode, previous: previous } }));
@@ -276,7 +348,12 @@
 		getMode: function () {
 			return mode;
 		},
-		setMode: setMode
+		setMode: setMode,
+		// 공통 패널 접기/펼치기 (map-analysis.js의 자동 펼침에서 사용)
+		setCollapsed: setCollapsed,
+		isCollapsed: function () {
+			return collapsed;
+		}
 	};
 
 	/* ---------- 초기화 ---------- */
@@ -305,6 +382,8 @@
 		if (el.hint) {
 			el.hint.textContent = '측정 결과는 지도 위 VWorld 라벨로 표시되며 "측정 결과 초기화" 전까지 유지됩니다.';
 		}
+		// 버튼 활성 표시(is-active, aria-pressed)를 현재 모드와 맞춘다. 표시만 바꾸며 이벤트나 지도 API 호출은 없다.
+		renderMode();
 	}
 
 	Array.prototype.forEach.call(el.buttons, function (button) {
@@ -320,7 +399,24 @@
 	});
 	el.cancel.addEventListener('click', function () {
 		cancelDrawing();
+		measureState = 'cancelled';
 		setMessage('그리기를 취소했습니다. 다시 측정하려면 "새 측정"을 누르세요.');
+		renderSummary();
+	});
+	if (el.toggle) {
+		el.toggle.addEventListener('click', function () {
+			setCollapsed(!collapsed);
+		});
+	}
+	// 다른 모듈이 자기 모드의 요약 문구를 알려 준다. (map-analysis.js: 반경과 분석 상태)
+	document.addEventListener('gis:toolbarsummary', function (event) {
+		var detail = event.detail || {};
+		if (detail.mode && MODE_INFO[detail.mode]) {
+			externalSummaries[detail.mode] = detail.text || '';
+			if (detail.mode === mode) {
+				renderSummary();
+			}
+		}
 	});
 	el.complete.addEventListener('click', completeDrawingExperimental);
 	el.coordCopy.addEventListener('click', copyCoordinate);
@@ -339,7 +435,9 @@
 	document.addEventListener('keydown', function (event) {
 		if (event.key === 'Escape' && MEASURE_MODES[mode]) {
 			cancelDrawing();
+			measureState = 'cancelled';
 			setMessage('그리기를 취소했습니다. 다시 측정하려면 "새 측정"을 누르세요.');
+			renderSummary();
 		}
 	});
 
