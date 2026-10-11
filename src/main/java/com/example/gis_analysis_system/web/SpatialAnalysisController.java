@@ -53,6 +53,12 @@ public class SpatialAnalysisController {
 				parseBoolean(includeBuildingIds, false, "includeBuildingIds"));
 	}
 
+	/** A blocked partial analysis is a 200 answer with result.status PARTIAL_RESULT_BLOCKED (decided by Python). */
+	@GetMapping("/api/analyses/{id}/hotspot")
+	public SpatialAnalysisResponse savedHotspot(@PathVariable String id, @RequestParam(required = false) String cellSize) {
+		return this.service.savedHotspot(parseId(id, "id"), parseCellSize(cellSize));
+	}
+
 	@GetMapping("/api/analyses/{id}/comparison")
 	public SpatialAnalysisResponse comparison(@PathVariable String id, @RequestParam(required = false) String with,
 			@RequestParam(required = false) String includeUnchanged,
@@ -78,6 +84,12 @@ public class SpatialAnalysisController {
 		return this.service.snapshotGridDensity(token, parseCellSize(cellSize),
 				parseBoolean(includeEmptyCells, true, "includeEmptyCells"),
 				parseBoolean(includeBuildingIds, false, "includeBuildingIds"));
+	}
+
+	@GetMapping("/api/analysis-snapshots/{token}/hotspot")
+	public SpatialAnalysisResponse snapshotHotspot(@PathVariable String token,
+			@RequestParam(required = false) String cellSize) {
+		return this.service.snapshotHotspot(token, parseCellSize(cellSize));
 	}
 
 	@GetMapping("/api/spatial-analysis/status")

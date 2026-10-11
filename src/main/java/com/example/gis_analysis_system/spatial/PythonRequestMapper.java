@@ -61,6 +61,13 @@ public class PythonRequestMapper {
 				cellSizeMeters, includeEmptyCells, includeCellBuildingIds));
 	}
 
+	/** The grid-density fields without its options; complete and incompleteReasons exactly as in the result. */
+	public byte[] hotspot(RadiusAnalysisResult result, AnalysisSource source, int cellSizeMeters) {
+		return write(new PythonRequests.Hotspot(PythonRequests.SCHEMA_VERSION, source(source), center(result),
+				result.radiusMeters(), result.complete(), reasons(result), result.summary(), buildings(result),
+				cellSizeMeters));
+	}
+
 	/** Both sides must be saved analyses; the caller has put them in analyzedAt order. */
 	public byte[] compare(RadiusAnalysisResult before, AnalysisSource beforeSource, RadiusAnalysisResult after,
 			AnalysisSource afterSource, boolean includeUnchanged, boolean includeBuildingChanges) {

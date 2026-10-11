@@ -88,6 +88,35 @@ class PythonServiceLiveTests {
 	}
 
 	@Test
+	void hotspotOf5000BuildingsPassesTheValidator() {
+		RadiusAnalysisResult result = SpatialFixtures.syntheticResult(5000, 0);
+		for (int cellSize : new int[] { 50, 100, 200 }) {
+			JsonNode response = this.client.post(Endpoint.HOTSPOT, this.mapper.hotspot(result,
+					new AnalysisSource(1L, Instant.parse("2026-10-11T03:00:00Z")), cellSize));
+
+			assertThat(response.get("cellSizeMeters").asInt()).isEqualTo(cellSize);
+			assertThat(response.get("status").asString()).isIn("OK", "INSUFFICIENT_CELLS", "CONSTANT_VALUES");
+			assertThat(response.get("blockedReasons")).isEmpty();
+			assertThat(response.get("cells").get("features")).hasSize(response.get("grid").get("cellCount").asInt());
+			assertThat(response.get("method").get("permutations").asInt()).isEqualTo(999);
+			assertThat(response.get("method").get("seed").asLong()).isEqualTo(20261012L);
+		}
+	}
+
+	@Test
+	void partialHotspotIsBlockedByPython() {
+		RadiusAnalysisResult result = SpatialFixtures.liveResult();  // PAGE_LIMIT
+		JsonNode response = this.client.post(Endpoint.HOTSPOT,
+				this.mapper.hotspot(result, new AnalysisSource(null, Instant.now()), 50));
+
+		assertThat(response.get("status").asString()).isEqualTo("PARTIAL_RESULT_BLOCKED");
+		assertThat(response.get("blockedReasons").get(0).asString()).isEqualTo("PAGE_LIMIT");
+		assertThat(response.get("grid").isNull()).isTrue();
+		assertThat(response.get("cells").get("features")).isEmpty();
+		assertThat(response.get("completeness").get("sourceComplete").asBoolean()).isFalse();
+	}
+
+	@Test
 	void wrongTokenIsAuthFailed() {
 		AnalysisServiceClient wrong = new AnalysisServiceClient(
 				AnalysisServiceProperties.of(System.getenv("ANALYSIS_IT_URL"), "wrong-token"), this.jsonMapper);

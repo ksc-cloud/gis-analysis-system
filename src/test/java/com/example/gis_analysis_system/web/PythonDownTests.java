@@ -107,10 +107,18 @@ class PythonDownTests {
 		assertThat(json(saved).get("error").asString()).isEqualTo("ANALYSIS_SERVICE_UNAVAILABLE");
 		assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(1));
 
+		// Hotspots follow the same rules: 503 at once, nothing else affected.
+		HttpResponse<String> snapshotHotspot = send("/api/analysis-snapshots/" + snapshotToken + "/hotspot?cellSize=50");
+		HttpResponse<String> savedHotspot = send("/api/analyses/1/hotspot");
+		for (HttpResponse<String> response : List.of(snapshotHotspot, savedHotspot)) {
+			assertThat(response.statusCode()).isEqualTo(503);
+			assertThat(json(response).get("error").asString()).isEqualTo("ANALYSIS_SERVICE_UNAVAILABLE");
+		}
+
 		// The radius analysis still works afterwards.
 		assertThat(send("/api/buildings/nearby?lon=126.978&lat=37.5665&radius=100").statusCode()).isEqualTo(200);
 
-		for (HttpResponse<String> response : List.of(status, snapshot, saved)) {
+		for (HttpResponse<String> response : List.of(status, snapshot, saved, snapshotHotspot, savedHotspot)) {
 			assertThat(response.body()).doesNotContain(TOKEN).doesNotContain(snapshotToken).doesNotContain("127.0.0.1");
 		}
 		assertThat(output.getAll()).doesNotContain(TOKEN).doesNotContain(snapshotToken);

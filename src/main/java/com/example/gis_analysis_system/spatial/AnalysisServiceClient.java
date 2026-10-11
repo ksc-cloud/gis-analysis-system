@@ -52,7 +52,9 @@ public class AnalysisServiceClient {
 
 		GRID_DENSITY("/internal/v1/grid-density", PythonResponseValidator::gridDensity),
 
-		COMPARE("/internal/v1/compare-analyses", PythonResponseValidator::compare);
+		COMPARE("/internal/v1/compare-analyses", PythonResponseValidator::compare),
+
+		HOTSPOT("/internal/v1/hotspot", PythonResponseValidator::hotspot);
 
 		private final String path;
 

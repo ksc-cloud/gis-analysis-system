@@ -108,6 +108,45 @@ class PythonRequestMapperTests {
 	}
 
 	@Test
+	void hotspotIsTheGridRequestWithoutItsOptions() {
+		RadiusAnalysisResult result = SpatialFixtures.liveResult();
+		for (AnalysisSource source : List.of(new AnalysisSource(12L, ANALYZED_AT), new AnalysisSource(null, ANALYZED_AT))) {
+			ObjectNode grid = (ObjectNode) read(this.mapper.gridDensity(result, source, 200, true, false));
+			grid.remove("includeEmptyCells");
+			grid.remove("includeCellBuildingIds");
+
+			JsonNode hotspot = read(this.mapper.hotspot(result, source, 200));
+
+			assertThat(hotspot).isEqualTo(grid);
+			assertThat(names(hotspot)).isEqualTo(Set.of("schemaVersion", "source", "center", "radiusMeters", "complete",
+					"incompleteReasons", "javaSummary", "buildings", "cellSizeMeters"));
+			assertThat(hotspot.has("permutations")).isFalse();
+			assertThat(hotspot.has("seed")).isFalse();
+			assertThat(hotspot.get("cellSizeMeters").asInt()).isEqualTo(200);
+			assertThat(hotspot.get("javaSummary").get("outsideExcluded").asInt())
+				.isEqualTo(result.summary().outsideExcluded());
+			assertThat(hotspot.get("buildings")).hasSize(result.buildings().size());
+		}
+	}
+
+	@Test
+	void hotspotSendsAPartialResultAsItIs() {
+		RadiusAnalysisResult base = SpatialFixtures.syntheticResult(2, 0);
+		RadiusAnalysisResult partial = withBuildings(base, base.buildings(),
+				List.of(new IncompleteReason(ReasonCode.TIME_LIMIT, "시간"),
+						new IncompleteReason(ReasonCode.GEOMETRY_UNAVAILABLE, "도형"),
+						new IncompleteReason(ReasonCode.PAGE_LIMIT, "한도")));
+		JsonNode json = read(this.mapper.hotspot(partial, new AnalysisSource(3L, ANALYZED_AT), 50));
+
+		assertThat(json.get("complete").asBoolean()).isFalse();
+		List<String> codes = new ArrayList<>();
+		json.get("incompleteReasons").forEach((reason) -> codes.add(reason.get("code").asString()));
+		assertThat(codes).containsExactly("TIME_LIMIT", "GEOMETRY_UNAVAILABLE", "PAGE_LIMIT");
+		assertThat(json.get("incompleteReasons").get(1).get("message").asString()).isEqualTo("도형");
+		assertThat(json.get("buildings")).hasSize(2);
+	}
+
+	@Test
 	void compareSendsCriterionAndDataSource() {
 		RadiusAnalysisResult before = SpatialFixtures.syntheticResult(3, 0);
 		RadiusAnalysisResult after = SpatialFixtures.syntheticResult(3, 1);

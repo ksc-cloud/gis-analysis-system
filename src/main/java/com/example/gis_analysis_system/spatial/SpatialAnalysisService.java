@@ -84,6 +84,18 @@ public class SpatialAnalysisService {
 	}
 
 	/**
+	 * Grid hotspots of a saved analysis. A partial analysis is sent as well: Python is the only place that decides
+	 * whether it is blocked (status PARTIAL_RESULT_BLOCKED), and its answer is returned as it is.
+	 */
+	public SpatialAnalysisResponse savedHotspot(long analysisId, int cellSize) {
+		requireCellSize(cellSize);
+		this.client.requireAvailable();
+		AnalysisDetail detail = this.historyService.get(analysisId);
+		byte[] body = this.mapper.hotspot(detail.result(), saved(detail), cellSize);
+		return response(List.of(detail.analysisId()), this.client.post(Endpoint.HOTSPOT, body));
+	}
+
+	/**
 	 * Compares two saved analyses. The older one (analyzedAt, then analysisId) is "before", whatever order the ids
 	 * were given in.
 	 */
@@ -117,6 +129,13 @@ public class SpatialAnalysisService {
 		byte[] body = this.mapper.gridDensity(snapshot.result(), live(snapshot), cellSize, includeEmptyCells,
 				includeBuildingIds);
 		return response(List.of(), this.client.post(Endpoint.GRID_DENSITY, body));
+	}
+
+	public SpatialAnalysisResponse snapshotHotspot(String token, int cellSize) {
+		requireCellSize(cellSize);
+		AnalysisSnapshot snapshot = snapshot(token);
+		byte[] body = this.mapper.hotspot(snapshot.result(), live(snapshot), cellSize);
+		return response(List.of(), this.client.post(Endpoint.HOTSPOT, body));
 	}
 
 	/** Never throws; the address and the token are not part of the answer. */

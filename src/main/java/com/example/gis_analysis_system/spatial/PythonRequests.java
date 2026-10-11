@@ -47,6 +47,15 @@ final class PythonRequests {
 			int cellSizeMeters, boolean includeEmptyCells, boolean includeCellBuildingIds) {
 	}
 
+	/**
+	 * POST /internal/v1/hotspot. permutations and seed are not sent: Python uses its defaults (999, 20261012).
+	 * A partial analysis is sent as it is; Python decides whether it is blocked.
+	 */
+	record Hotspot(int schemaVersion, Source source, Center center, int radiusMeters, boolean complete,
+			List<IncompleteReason> incompleteReasons, Summary javaSummary, List<Building> buildings,
+			int cellSizeMeters) {
+	}
+
 	/** One side of POST /internal/v1/compare-analyses. */
 	record SavedAnalysis(int schemaVersion, Source source, Center center, int radiusMeters, boolean complete,
 			List<IncompleteReason> incompleteReasons, Summary javaSummary, List<Building> buildings, String criterion,

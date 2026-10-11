@@ -115,6 +115,50 @@ class SpatialAnalysisControllerTests {
 	}
 
 	@Test
+	void savedHotspotDefaultsAndCellSizes() throws Exception {
+		given(this.service.savedHotspot(anyLong(), anyInt())).willReturn(response(12L));
+
+		this.mockMvc.perform(get("/api/analyses/12/hotspot"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.analysisIds[0]").value(12))
+			.andExpect(jsonPath("$.analysisService.schemaVersion").value(1));
+		verify(this.service).savedHotspot(12, 100);
+		for (String cellSize : new String[] { "50", "100", "200" }) {
+			this.mockMvc.perform(get("/api/analyses/12/hotspot").param("cellSize", cellSize)).andExpect(status().isOk());
+		}
+		verify(this.service).savedHotspot(12, 50);
+		verify(this.service, org.mockito.Mockito.times(2)).savedHotspot(12, 100);
+		verify(this.service).savedHotspot(12, 200);
+	}
+
+	@Test
+	void snapshotHotspotRoute() throws Exception {
+		given(this.service.snapshotHotspot(TOKEN, 100)).willReturn(response());
+		given(this.service.snapshotHotspot(TOKEN, 50)).willReturn(response());
+
+		this.mockMvc.perform(get("/api/analysis-snapshots/" + TOKEN + "/hotspot"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.analysisIds").isEmpty());
+		this.mockMvc.perform(get("/api/analysis-snapshots/" + TOKEN + "/hotspot").param("cellSize", "50"))
+			.andExpect(status().isOk());
+		verify(this.service).snapshotHotspot(TOKEN, 100);
+		verify(this.service).snapshotHotspot(TOKEN, 50);
+	}
+
+	@Test
+	void blockedHotspotIsPassedOnWith200() throws Exception {
+		given(this.service.savedHotspot(12, 100)).willReturn(new SpatialAnalysisResponse(List.of(12L),
+				new ServiceInfo(1), JsonMapper.builder().build().readTree("{\"schemaVersion\":1,"
+						+ "\"status\":\"PARTIAL_RESULT_BLOCKED\",\"blockedReasons\":[\"PAGE_LIMIT\"],\"grid\":null}")));
+
+		this.mockMvc.perform(get("/api/analyses/12/hotspot"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.result.status").value("PARTIAL_RESULT_BLOCKED"))
+			.andExpect(jsonPath("$.result.blockedReasons[0]").value("PAGE_LIMIT"))
+			.andExpect(jsonPath("$.result.grid").isEmpty());
+	}
+
+	@Test
 	void statusHasOnlyTwoFields() throws Exception {
 		given(this.service.status()).willReturn(new ServiceStatus(false, true));
 
@@ -137,6 +181,9 @@ class SpatialAnalysisControllerTests {
 		this.mockMvc.perform(get("/api/analyses/12/comparison").param("with", id))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.error").value("INVALID_ID"));
+		this.mockMvc.perform(get("/api/analyses/" + id + "/hotspot"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.error").value("INVALID_ID"));
 		verifyNoInteractions(this.service);
 	}
 
@@ -146,6 +193,11 @@ class SpatialAnalysisControllerTests {
 		this.mockMvc.perform(get("/api/analyses/12/grid-density").param("cellSize", cellSize))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.error").value("INVALID_CELL_SIZE"));
+		for (String path : new String[] { "/api/analyses/12/hotspot", "/api/analysis-snapshots/" + TOKEN + "/hotspot" }) {
+			this.mockMvc.perform(get(path).param("cellSize", cellSize))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.error").value("INVALID_CELL_SIZE"));
+		}
 		verifyNoInteractions(this.service);
 	}
 
@@ -190,6 +242,38 @@ class SpatialAnalysisControllerTests {
 			.andExpect(jsonPath("$.error").value(reason.name()))
 			.andExpect(jsonPath("$.message").value("분석 서버 오류"))
 			.andExpect(jsonPath("$.analysisServiceError").value("VALIDATION_ERROR"));
+	}
+
+	@ParameterizedTest
+	@EnumSource(Reason.class)
+	void hotspotPythonFailuresHaveTheirStatus(Reason reason) throws Exception {
+		given(this.service.savedHotspot(12, 100)).willThrow(new AnalysisServiceException(reason, "분석 서버 오류"));
+		given(this.service.snapshotHotspot(TOKEN, 100)).willThrow(new AnalysisServiceException(reason, "분석 서버 오류"));
+
+		for (String path : new String[] { "/api/analyses/12/hotspot", "/api/analysis-snapshots/" + TOKEN + "/hotspot" }) {
+			MvcResult result = this.mockMvc.perform(get(path))
+				.andExpect(status().is(reason.status()))
+				.andExpect(jsonPath("$.error").value(reason.name()))
+				.andReturn();
+			assertThat(result.getResponse().getContentAsString()).doesNotContain(TOKEN);
+		}
+	}
+
+	@Test
+	void hotspotHistoryErrorsAndTokensAreNotEchoed() throws Exception {
+		given(this.service.savedHotspot(99, 100))
+			.willThrow(new AnalysisHistoryException(Code.ANALYSIS_NOT_FOUND, "분석 이력을 찾을 수 없습니다."));
+		given(this.service.snapshotHotspot(anyString(), anyInt()))
+			.willThrow(new AnalysisHistoryException(Code.SNAPSHOT_EXPIRED, "분석 결과가 만료되었거나 없습니다."));
+
+		this.mockMvc.perform(get("/api/analyses/99/hotspot"))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.error").value("ANALYSIS_NOT_FOUND"));
+		MvcResult expired = this.mockMvc.perform(get("/api/analysis-snapshots/" + TOKEN + "/hotspot"))
+			.andExpect(status().isGone())
+			.andExpect(jsonPath("$.error").value("SNAPSHOT_EXPIRED"))
+			.andReturn();
+		assertThat(expired.getResponse().getContentAsString()).doesNotContain(TOKEN);
 	}
 
 	@Test

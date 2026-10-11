@@ -263,6 +263,179 @@ class AnalysisServiceClientTests {
 		}
 	}
 
+	// ----------------------------------------------------------------- hotspot
+
+	@ParameterizedTest
+	@ValueSource(strings = { SpatialFixtures.HOTSPOT_OK, SpatialFixtures.HOTSPOT_CONSTANT,
+			SpatialFixtures.HOTSPOT_INSUFFICIENT, SpatialFixtures.HOTSPOT_BLOCKED, SpatialFixtures.HOTSPOT_GEOMETRY_BLOCKED })
+	void hotspotResponsesOfEveryStatusAreAccepted(String kind) {
+		AnalysisServiceClient client = client();
+		this.server.expect(requestTo(BASE + "/internal/v1/hotspot"))
+			.andExpect(method(HttpMethod.POST))
+			.andExpect(header("X-Internal-Token", SpatialFixtures.TOKEN))
+			.andRespond(withSuccess(SpatialFixtures.hotspotResponse(kind), MediaType.APPLICATION_JSON));
+
+		JsonNode response = client.post(Endpoint.HOTSPOT, BODY);
+
+		assertThat(response.get("status").asString()).isEqualTo(
+				SpatialFixtures.HOTSPOT_GEOMETRY_BLOCKED.equals(kind) ? SpatialFixtures.HOTSPOT_BLOCKED : kind);
+		this.server.verify();
+	}
+
+	@Test
+	void hotspotAcceptsFieldsItDoesNotKnow() {
+		String body = SpatialFixtures.hotspotResponse(SpatialFixtures.HOTSPOT_OK)
+			.replace("\"schemaVersion\": 1,", "\"schemaVersion\": 1, \"future\": {\"x\": [1]},")
+			.replace("\"bin\": 3,", "\"bin\": 3, \"lisa\": \"HH\",")
+			.replace("\"pValue\": 0.001,", "\"pValue\": 0.001, \"pseudoP\": 0.002,");
+		AnalysisServiceClient client = client();
+		respondOk(body);
+
+		assertThat(client.post(Endpoint.HOTSPOT, BODY).get("future").get("x").get(0).asInt()).isEqualTo(1);
+	}
+
+	@Test
+	void hotspotMoranWithoutSimulatedSpreadIsAccepted() {
+		AnalysisServiceClient client = client();
+		respondOk(SpatialFixtures.hotspotResponse(SpatialFixtures.HOTSPOT_OK)
+			.replace("\"zSimulated\": 4.2", "\"zSimulated\": null"));
+
+		assertThat(client.post(Endpoint.HOTSPOT, BODY).get("moran").get("zSimulated").isNull()).isTrue();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "\"status\": \"OK\"|\"status\": \"DONE\"", "\"status\": \"OK\"|\"status\": 1",
+			"\"blockedReasons\": []|\"blockedReasons\": [\"PAGE_LIMIT\"]", "\"blockedReasons\": []|\"blockedReasons\": [1]",
+			"\"blockedReasons\": [],|", "\"method\": {\"statistic\": \"GETIS_ORD_GI_STAR\"}|\"method\": null",
+			"\"complete\": true|\"complete\": false", "\"sourceComplete\": true, |",
+			"\"sourceComplete\": true|\"sourceComplete\": false",
+			"\"pythonGeometryExcluded\": 0|\"pythonGeometryExcluded\": null",
+			"\"cellCount\": 3, \"returnedCellCount\"|\"cellCount\": 4, \"returnedCellCount\"",
+			"\"summary\": {\"cellCount\": 3|\"summary\": {\"cellCount\": 4",
+			"\"summary\": {\"cellCount\": 3|\"summary\": {\"cellCount\": 3.5",
+			"\"testedCellCount\": 2|\"testedCellCount\": 1", "\"studyCellCount\": 2|\"studyCellCount\": -2",
+			"\"HOT_99\": 1|\"HOT_99\": 2", "\"counts\": {|\"counts\": null, \"x\": {", "\"grid\": {|\"grid\": null, \"x\": {",
+			"\"moran\": {|\"moran\": null, \"x\": {", "\"i\": 0.21|\"i\": \"0.21\"", "\"i\": 0.21|\"i\": 1e999",
+			"\"pValue\": 0.001,|\"pValue\": 0.0,", "\"pValue\": 0.001,|\"pValue\": 1.2,",
+			"\"zSimulated\": 4.2|\"zSimulated\": \"4.2\"", "\"simulatedSd\": 0.12|\"simulatedSd\": -0.12",
+			"\"hotspotClass\": \"HOT_99\", \"bin\": 3|\"hotspotClass\": \"HOT_99\", \"bin\": 2",
+			"\"hotspotClass\": \"HOT_99\", \"bin\": 3|\"hotspotClass\": \"HOT_99\", \"bin\": 3.0",
+			"\"hotspotClass\": \"NOT_SIGNIFICANT\"|\"hotspotClass\": \"MAYBE\"",
+			"\"bin\": 3, \"reason\": null|\"bin\": 3, \"reason\": \"SMALL_BOUNDARY\"",
+			"\"giZ\": 3.1|\"giZ\": null", "\"giZ\": 3.1|\"giZ\": -3.1", "\"pValue\": 0.00194|\"pValue\": 1.5",
+			"\"qValue\": 0.617|\"qValue\": -0.1", "\"qValue\": 0.0058|\"qValue\": null",
+			"\"giZ\": null, \"pValue\": null|\"giZ\": 0.1, \"pValue\": null",
+			"\"bin\": null, \"reason\": \"SMALL_BOUNDARY\"|\"bin\": 0, \"reason\": \"SMALL_BOUNDARY\"",
+			"\"reason\": \"SMALL_BOUNDARY\"|\"reason\": null", "\"neighborCount\": 8|\"neighborCount\": 8.5",
+			"\"neighborCount\": 8|\"neighborCount\": -1", "\"col\": 1,|\"col\": 1.5,",
+			"\"coverageRatio\": 0.2, \"neighborCount\": 8|\"coverageRatio\": \"0.2\", \"neighborCount\": 8",
+			"{\"type\": \"Feature\", \"id\": \"0:0\"|{\"type\": \"Feature\", \"id\": 0",
+			"\"type\": \"Polygon\"|\"type\": \"Point\"", "\"type\": \"FeatureCollection\"|\"type\": \"Feature\"" })
+	void hotspotStructureIsChecked(String replacement) {
+		assertHotspotBadResponse(SpatialFixtures.HOTSPOT_OK, replacement);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "\"blockedReasons\": [\"PAGE_LIMIT\"]|\"blockedReasons\": []",
+			"\"complete\": false|\"complete\": true", "\"grid\": null|\"grid\": {\"cellCount\": 0}",
+			"\"counts\": null|\"counts\": {}", "\"moran\": null|\"moran\": {}",
+			"\"features\": []|\"features\": [{}]", "\"summary\": {\"cellCount\": 0|\"summary\": {\"cellCount\": 1",
+			"\"testedCellCount\": 0|\"testedCellCount\": 1",
+			"\"pythonGeometryExcluded\": null|\"pythonGeometryExcluded\": 1",
+			"\"sourceComplete\": false|\"sourceComplete\": true" })
+	void blockedHotspotStructureIsChecked(String replacement) {
+		assertHotspotBadResponse(SpatialFixtures.HOTSPOT_BLOCKED, replacement);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "\"pythonGeometryExcluded\": 1|\"pythonGeometryExcluded\": 0",
+			"\"pythonGeometryExcluded\": 1|\"pythonGeometryExcluded\": null",
+			"\"sourceComplete\": true|\"sourceComplete\": false" })
+	void pythonGeometryBlockingIsChecked(String replacement) {
+		assertHotspotBadResponse(SpatialFixtures.HOTSPOT_GEOMETRY_BLOCKED, replacement);
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { SpatialFixtures.HOTSPOT_CONSTANT, SpatialFixtures.HOTSPOT_INSUFFICIENT })
+	void untestedStatusesHaveNoStatistics(String kind) {
+		String withMoran = SpatialFixtures.hotspotResponse(kind)
+			.replace("\"moran\": null", "\"moran\": {\"i\": 0.2, \"expected\": -0.5, \"pValue\": 0.5, "
+					+ "\"zSimulated\": 1.0, \"simulatedMean\": -0.5, \"simulatedSd\": 0.1}");
+		String withTestedCell = SpatialFixtures.hotspotResponse(kind)
+			.replace("\"giZ\": null, \"pValue\": null, \"qValue\": null, \"hotspotClass\": \"NOT_TESTED\", \"bin\": null, "
+					+ "\"reason\": \"" + kind + "\"",
+					"\"giZ\": 0.5, \"pValue\": 0.6, \"qValue\": 0.6, \"hotspotClass\": \"NOT_SIGNIFICANT\", \"bin\": 0, "
+							+ "\"reason\": null")
+			.replace("\"HOT_99\": 0, \"NOT_SIGNIFICANT\": 0, \"NOT_TESTED\": 3",
+					"\"HOT_99\": 0, \"NOT_SIGNIFICANT\": 2, \"NOT_TESTED\": 1")
+			.replace("\"testedCellCount\": 0", "\"testedCellCount\": 2");
+		for (String body : new String[] { withMoran, withTestedCell }) {
+			assertThat(body).isNotEqualTo(SpatialFixtures.hotspotResponse(kind));
+			AnalysisServiceClient client = client();
+			respondOk(body);
+			assertReason(() -> client.post(Endpoint.HOTSPOT, BODY), Reason.ANALYSIS_SERVICE_BAD_RESPONSE);
+		}
+	}
+
+	@Test
+	void unknownHotspotStatusIsRejectedEvenWhenTheRestIsConsistent() {
+		// Everything else matches an untested status, so only the status check can reject it.
+		assertHotspotBadResponse(SpatialFixtures.HOTSPOT_CONSTANT,
+				"\"status\": \"CONSTANT_VALUES\"|\"status\": \"SKIPPED\"");
+	}
+
+	@Test
+	void hotspotPythonErrorsAreTranslated() {
+		AnalysisServiceClient client = client();
+		respondError(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED");
+		assertReason(() -> client.post(Endpoint.HOTSPOT, BODY), Reason.ANALYSIS_SERVICE_AUTH_FAILED);
+		this.server.verify();
+		this.server.reset();
+
+		respondError(HttpStatus.UNPROCESSABLE_CONTENT, "VALIDATION_ERROR");
+		AnalysisServiceException ex = assertReason(() -> client.post(Endpoint.HOTSPOT, BODY),
+				Reason.ANALYSIS_DATA_UNSUPPORTED);
+		assertThat(ex.getServiceError()).isEqualTo("VALIDATION_ERROR");
+		assertThat(ex.getMessage()).doesNotContain(PYTHON_SECRET_MESSAGE);
+		this.server.reset();
+
+		respondError(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR");
+		assertReason(() -> client.post(Endpoint.HOTSPOT, BODY), Reason.ANALYSIS_SERVICE_ERROR);
+		this.server.reset();
+
+		this.server.expect(requestTo(BASE + "/internal/v1/hotspot"))
+			.andRespond(withException(new SocketTimeoutException("Read timed out")));
+		assertReason(() -> client.post(Endpoint.HOTSPOT, BODY), Reason.ANALYSIS_SERVICE_TIMEOUT);
+		client.requireAvailable();  // a response timeout starts no cooldown
+		this.server.reset();
+
+		this.server.expect(requestTo(BASE + "/internal/v1/hotspot"))
+			.andRespond(withException(new ConnectException("Connection refused")));
+		assertReason(() -> client.post(Endpoint.HOTSPOT, BODY), Reason.ANALYSIS_SERVICE_UNAVAILABLE);
+		assertReason(client::requireAvailable, Reason.ANALYSIS_SERVICE_UNAVAILABLE);
+		this.server.verify();
+	}
+
+	@Test
+	void hotspotUsesTheGridLimitNotTheCompareLimit() {
+		AnalysisServiceClient client = client(new AnalysisServiceProperties(BASE, SpatialFixtures.TOKEN, null, null,
+				null, null, 0, null, DataSize.ofBytes(10), DataSize.ofBytes(1000), null));
+		this.server.expect(never(), requestTo(org.hamcrest.Matchers.startsWith(BASE)));
+
+		assertReason(() -> client.post(Endpoint.HOTSPOT, new byte[11]), Reason.ANALYSIS_TOO_LARGE);
+		this.server.verify();
+	}
+
+	private void assertHotspotBadResponse(String kind, String replacement) {
+		String[] parts = replacement.split("\\|", -1);
+		String body = SpatialFixtures.hotspotResponse(kind).replace(parts[0], parts[1]);
+		assertThat(body).isNotEqualTo(SpatialFixtures.hotspotResponse(kind));
+		AnalysisServiceClient client = client();
+		respondOk(body);
+
+		assertReason(() -> client.post(Endpoint.HOTSPOT, BODY), Reason.ANALYSIS_SERVICE_BAD_RESPONSE);
+	}
+
 	@Test
 	void responsesOverTheLimitAreBadResponses() {
 		AnalysisServiceClient client = client(new AnalysisServiceProperties(BASE, SpatialFixtures.TOKEN, null, null,

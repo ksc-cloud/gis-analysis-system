@@ -155,12 +155,13 @@ class HomeControllerTests {
 	@Test
 	void spatialScriptsAreServedButNotLoadedWithoutApiKey() throws Exception {
 		HttpResponse<String> api = get("/js/spatial-api.js");
+		HttpResponse<String> views = get("/js/spatial-views.js");
 		HttpResponse<String> dashboard = get("/js/spatial-dashboard.js");
 		HttpResponse<String> compare = get("/js/spatial-compare.js");
 		HttpResponse<String> gridRenderer = get("/js/spatial-grid-renderer.js");
 		HttpResponse<String> grid = get("/js/spatial-grid.js");
 
-		for (HttpResponse<String> response : List.of(api, dashboard, compare, gridRenderer, grid)) {
+		for (HttpResponse<String> response : List.of(api, views, dashboard, compare, gridRenderer, grid)) {
 			assertThat(response.statusCode()).isEqualTo(200);
 			assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
 					(contentType) -> assertThat(contentType).contains("javascript"));
@@ -172,8 +173,11 @@ class HomeControllerTests {
 			.contains("/statistics").contains("Intl.NumberFormat('ko-KR'");
 		assertThat(dashboard.body()).contains("gis:analysisresult").contains("gis:analysissaved")
 			.contains("gis:tabchange").contains("AbortController").contains("textContent");
+		// Switching the views (and its gis:spatialviewchange event) is spatial-views.js; the compare view asks it.
+		assertThat(views.body()).contains("gis:spatialviewchange").contains("gisSpatialViews").contains("aria-pressed")
+			.doesNotContain("innerHTML");
 		assertThat(compare.body()).contains("/comparison?with=").doesNotContain("신축했").contains("gis:compareselection")
-			.contains("gis:historychange").contains("gis:spatialviewchange").contains("AbortController");
+			.contains("gis:historychange").contains("gisSpatialViews").contains("AbortController");
 		assertThat(api.body()).contains("/comparison?with=").contains("%p").contains("/grid-density");
 		// The grid uses the public VWorld shape API (map.clear() is checked on the code without comments in the JS tests).
 		assertThat(gridRenderer.body()).contains("vw.geom.PolygonZ").contains("removeObject")
@@ -185,7 +189,8 @@ class HomeControllerTests {
 		assertThat(get("/js/map-history.js").body()).contains("gis:analysissaved").contains("gis:historychange")
 			.contains("gis:compareselection");
 		// Without a key the map scripts are not loaded, but the tab markup is still rendered.
-		assertThat(get("/").body()).doesNotContain("spatial-dashboard.js").doesNotContain("spatial-compare.js")
+		assertThat(get("/").body()).doesNotContain("spatial-views.js").doesNotContain("spatial-dashboard.js")
+			.doesNotContain("spatial-compare.js")
 			.doesNotContain("spatial-grid.js").doesNotContain("spatial-grid-renderer.js")
 			.contains("id=\"tab-spatial\"")
 			.contains("id=\"spatial-section\"");

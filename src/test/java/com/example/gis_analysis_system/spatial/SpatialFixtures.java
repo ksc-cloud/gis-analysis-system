@@ -135,6 +135,109 @@ final class SpatialFixtures {
 				    "properties": {"buildingCount": 1, "coverageRatio": 0.02}}]}}""";
 	}
 
+	/** Python hotspot statuses and the two kinds of blocking used by {@link #hotspotResponse(String)}. */
+	static final String HOTSPOT_OK = "OK";
+
+	static final String HOTSPOT_CONSTANT = "CONSTANT_VALUES";
+
+	static final String HOTSPOT_INSUFFICIENT = "INSUFFICIENT_CELLS";
+
+	static final String HOTSPOT_BLOCKED = "PARTIAL_RESULT_BLOCKED";
+
+	/** Blocked by Python after the grid: a building it could not repair (Java's analysis was complete). */
+	static final String HOTSPOT_GEOMETRY_BLOCKED = "PYTHON_GEOMETRY_EXCLUDED";
+
+	private static final String HOTSPOT_POLYGON = """
+			{"type": "Polygon", "coordinates": [[[126.97, 37.56], [126.98, 37.56], [126.98, 37.57], [126.97, 37.56]]]}""";
+
+	/**
+	 * A response shaped like analysis-service/app/schemas/hotspot.py: three cells (two tested and one small boundary
+	 * cell for OK, all NOT_TESTED for CONSTANT_VALUES and INSUFFICIENT_CELLS), or a blocked result.
+	 */
+	static String hotspotResponse(String kind) {
+		boolean blocked = HOTSPOT_BLOCKED.equals(kind) || HOTSPOT_GEOMETRY_BLOCKED.equals(kind);
+		String status = blocked ? HOTSPOT_BLOCKED : kind;
+		String blockedReasons = HOTSPOT_BLOCKED.equals(kind) ? "[\"PAGE_LIMIT\"]"
+				: HOTSPOT_GEOMETRY_BLOCKED.equals(kind) ? "[\"PYTHON_GEOMETRY_EXCLUDED\"]" : "[]";
+		String completeness = HOTSPOT_BLOCKED.equals(kind)
+				? """
+						{"complete": false, "scope": "OBSERVED_BUILDINGS_ONLY", "reasons": [{"code": "PAGE_LIMIT", "message": "x"}],
+						 "javaOutsideExcluded": 1, "javaGeometryUnavailable": 0, "notes": [],
+						 "sourceComplete": false, "pythonGeometryExcluded": null}"""
+				: HOTSPOT_GEOMETRY_BLOCKED.equals(kind) ? """
+						{"complete": false, "scope": "OBSERVED_BUILDINGS_ONLY", "reasons": [],
+						 "javaOutsideExcluded": 0, "javaGeometryUnavailable": 0, "notes": [],
+						 "sourceComplete": true, "pythonGeometryExcluded": 1}"""
+						: """
+								{"complete": true, "scope": "COMPLETE_RESULT", "reasons": [],
+								 "javaOutsideExcluded": 0, "javaGeometryUnavailable": 0, "notes": [],
+								 "sourceComplete": true, "pythonGeometryExcluded": 0}""";
+		if (blocked) {
+			return """
+					{"schemaVersion": 1, "source": null, "center": {"lon": 126.978, "lat": 37.5665}, "radiusMeters": 300,
+					 "cellSizeMeters": 50, "status": "%s", "blockedReasons": %s, "method": {"statistic": "GETIS_ORD_GI_STAR"},
+					 "grid": null, "counts": null, "moran": null,
+					 "summary": {"cellCount": 0, "studyCellCount": 0, "testedCellCount": 0,
+					   "classes": {"HOT_99": 0, "HOT_95": 0, "HOT_90": 0, "NOT_SIGNIFICANT": 0, "COLD_90": 0, "COLD_95": 0,
+					               "COLD_99": 0, "NOT_TESTED": 0},
+					   "notTestedReasons": {"SMALL_BOUNDARY": 0}},
+					 "completeness": %s,
+					 "warnings": [{"code": "PARTIAL_RESULT_BLOCKED", "message": "x"}],
+					 "cells": {"type": "FeatureCollection", "features": []}}"""
+				.formatted(status, blockedReasons, completeness);
+		}
+		boolean ok = HOTSPOT_OK.equals(kind);
+		String first = ok ? """
+				"neighborCount": 8, "giZ": 3.1, "pValue": 0.00194, "qValue": 0.0058, "hotspotClass": "HOT_99", "bin": 3, "reason": null"""
+				: """
+						"neighborCount": 8, "giZ": null, "pValue": null, "qValue": null, "hotspotClass": "NOT_TESTED", "bin": null, "reason": "%s\""""
+					.formatted(kind);
+		String second = ok ? """
+				"neighborCount": 5, "giZ": -0.5, "pValue": 0.617, "qValue": 0.617, "hotspotClass": "NOT_SIGNIFICANT", "bin": 0, "reason": null"""
+				: """
+						"neighborCount": 5, "giZ": null, "pValue": null, "qValue": null, "hotspotClass": "NOT_TESTED", "bin": null, "reason": "%s\""""
+					.formatted(kind);
+		String third = """
+				"neighborCount": null, "giZ": null, "pValue": null, "qValue": null, "hotspotClass": "NOT_TESTED", "bin": null, "reason": "SMALL_BOUNDARY\"""";
+		String moran = ok ? """
+				{"i": 0.21, "expected": -0.5, "pValue": 0.001, "zSimulated": 4.2, "simulatedMean": -0.49, "simulatedSd": 0.12}"""
+				: "null";
+		String classes = ok ? "\"HOT_99\": 1, \"NOT_SIGNIFICANT\": 1, \"NOT_TESTED\": 1"
+				: "\"HOT_99\": 0, \"NOT_SIGNIFICANT\": 0, \"NOT_TESTED\": 3";
+		StringBuilder features = new StringBuilder();
+		String[][] cells = { { "0:0", first }, { "1:0", second }, { "2:0", third } };
+		for (String[] cell : cells) {
+			int col = Integer.parseInt(cell[0].split(":")[0]);
+			features.append((features.length() > 0) ? ",\n" : "")
+				.append("{\"type\": \"Feature\", \"id\": \"")
+				.append(cell[0])
+				.append("\", \"geometry\": ")
+				.append(HOTSPOT_POLYGON)
+				.append(", \"properties\": {\"col\": ")
+				.append(col)
+				.append(", \"row\": 0, \"centerLon\": 126.978, \"centerLat\": 37.5665, \"boundary\": false, ")
+				.append("\"smallBoundary\": ")
+				.append(col == 2)
+				.append(", \"domainRatio\": 1.0, \"coverageRatio\": 0.2, ")
+				.append(cell[1])
+				.append("}}");
+		}
+		return """
+				{"schemaVersion": 1, "source": null, "center": {"lon": 126.978, "lat": 37.5665}, "radiusMeters": 300,
+				 "cellSizeMeters": 50, "status": "%s", "blockedReasons": [], "method": {"statistic": "GETIS_ORD_GI_STAR"},
+				 "grid": {"cellSizeMeters": 50, "cellCount": 3, "returnedCellCount": 3},
+				 "counts": {"total": 2, "analyzed": 2, "excluded": 0},
+				 "moran": %s,
+				 "summary": {"cellCount": 3, "studyCellCount": 2, "testedCellCount": %d,
+				   "classes": {%s, "HOT_95": 0, "HOT_90": 0, "COLD_90": 0, "COLD_95": 0, "COLD_99": 0},
+				   "notTestedReasons": {"SMALL_BOUNDARY": 1}},
+				 "completeness": %s,
+				 "warnings": [],
+				 "cells": {"type": "FeatureCollection", "features": [
+				 %s]}}"""
+			.formatted(status, moran, ok ? 2 : 0, classes, completeness, features);
+	}
+
 	static String compareResponse(boolean comparable) {
 		String statistics = comparable
 				? "{\"buildingCount\": {\"before\": 1, \"after\": 1}, \"unionArea\": {}, \"coverageRatio\": {}}" : "null";

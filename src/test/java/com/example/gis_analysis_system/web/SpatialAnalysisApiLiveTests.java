@@ -76,7 +76,35 @@ class SpatialAnalysisApiLiveTests {
 		assertThat(grid.statusCode()).isEqualTo(200);
 		assertThat(json(grid).get("result").get("cells").get("type").asString()).isEqualTo("FeatureCollection");
 
+		// A complete 100 m analysis has 13 testable 50 m cells: too few, answered with every cell untested.
+		HttpResponse<String> hotspot = send("/api/analysis-snapshots/" + token + "/hotspot?cellSize=50");
+		assertThat(hotspot.statusCode()).isEqualTo(200);
+		JsonNode result = json(hotspot).get("result");
+		assertThat(result.get("status").asString()).isEqualTo("INSUFFICIENT_CELLS");
+		assertThat(result.get("cells").get("features")).hasSize(result.get("grid").get("cellCount").asInt());
+
 		assertThat(send("/api/spatial-analysis/status").body()).isEqualTo("{\"available\":true,\"configured\":true}");
+	}
+
+	@Test
+	void partialSnapshotHotspotIsBlockedWith200() throws Exception {
+		double d = 0.0001;
+		double[][][] polygon = { { { 126.978 - d, 37.5665 - d }, { 126.978 + d, 37.5665 - d },
+				{ 126.978 + d, 37.5665 + d }, { 126.978 - d, 37.5665 + d }, { 126.978 - d, 37.5665 - d } } };
+		// Two pages reported, but page 2 answers as page 1: PAGINATION_INCONSISTENT, a partial result.
+		given(this.buildingClient.findBuildingsWithin(anyDouble(), anyDouble(), anyInt(), anyInt()))
+			.willReturn(new FeaturePage(2000, 2, 1,
+					List.of(new BuildingFeature("LT_C_SPBD.1", CITY_HALL, List.<double[][][]>of(polygon)))));
+		String token = json(send("/api/buildings/nearby?lon=126.978&lat=37.5665&radius=100")).get("analysisToken")
+			.asString();
+
+		HttpResponse<String> hotspot = send("/api/analysis-snapshots/" + token + "/hotspot");
+		assertThat(hotspot.statusCode()).isEqualTo(200);
+		JsonNode result = json(hotspot).get("result");
+		assertThat(result.get("status").asString()).isEqualTo("PARTIAL_RESULT_BLOCKED");
+		assertThat(result.get("blockedReasons").get(0).asString()).isEqualTo("PAGINATION_INCONSISTENT");
+		assertThat(result.get("cells").get("features")).isEmpty();
+		assertThat(hotspot.body()).doesNotContain(token);
 	}
 
 	private HttpResponse<String> send(String path) throws Exception {

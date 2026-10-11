@@ -56,6 +56,8 @@ class SpatialAnalysisServiceTests {
 			.willReturn(this.jsonMapper.readTree(SpatialFixtures.gridDensityResponse()));
 		given(this.client.post(eq(Endpoint.COMPARE), any()))
 			.willReturn(this.jsonMapper.readTree(SpatialFixtures.compareResponse(true)));
+		given(this.client.post(eq(Endpoint.HOTSPOT), any()))
+			.willReturn(this.jsonMapper.readTree(SpatialFixtures.hotspotResponse(SpatialFixtures.HOTSPOT_OK)));
 	}
 
 	// ----------------------------------------------------------------- saved analyses
@@ -97,6 +99,101 @@ class SpatialAnalysisServiceTests {
 			.satisfies((ex) -> assertThat(ex.getError()).isEqualTo("INVALID_CELL_SIZE"));
 		verifyNoInteractions(this.history);
 		verify(this.client, never()).post(any(), any());
+	}
+
+	// ----------------------------------------------------------------- hotspot
+
+	@Test
+	void savedHotspotSendsTheAnalysisWithTheCellSize() {
+		AnalysisDetail detail = SpatialFixtures.detail(12, "2026-10-11T03:00:00Z", SpatialFixtures.syntheticResult(3, 0));
+		given(this.history.get(12)).willReturn(detail);
+
+		SpatialAnalysisResponse response = this.service.savedHotspot(12, 50);
+
+		assertThat(response.analysisIds()).containsExactly(12L);
+		assertThat(response.analysisService().schemaVersion()).isEqualTo(1);
+		assertThat(response.result().get("status").asString()).isEqualTo("OK");
+		JsonNode sent = sent(Endpoint.HOTSPOT);
+		assertThat(sent.get("cellSizeMeters").asInt()).isEqualTo(50);
+		assertThat(sent.get("source").get("kind").asString()).isEqualTo("SAVED");
+		assertThat(sent.get("source").get("analysisId").asLong()).isEqualTo(12);
+		assertThat(sent.get("complete").asBoolean()).isTrue();
+		assertThat(sent.has("permutations") || sent.has("seed") || sent.has("includeEmptyCells")).isFalse();
+		InOrder order = inOrder(this.client, this.history);
+		order.verify(this.client).requireAvailable();
+		order.verify(this.history).get(12);
+		order.verify(this.client).post(eq(Endpoint.HOTSPOT), any());
+	}
+
+	@Test
+	void partialAnalysisIsSentAndTheBlockedResultReturnedAsItIs() {
+		JsonNode blocked = this.jsonMapper.readTree(SpatialFixtures.hotspotResponse(SpatialFixtures.HOTSPOT_BLOCKED));
+		given(this.client.post(eq(Endpoint.HOTSPOT), any())).willReturn(blocked);
+		// liveResult() stubs its own mocks: build it before stubbing the history.
+		AnalysisDetail partial = SpatialFixtures.detail(12, "2026-10-11T03:00:00Z", SpatialFixtures.liveResult());
+		given(this.history.get(12)).willReturn(partial);
+
+		SpatialAnalysisResponse response = this.service.savedHotspot(12, 100);
+
+		JsonNode sent = sent(Endpoint.HOTSPOT);
+		assertThat(sent.get("complete").asBoolean()).isFalse();
+		assertThat(sent.get("incompleteReasons").get(0).get("code").asString()).isEqualTo("PAGE_LIMIT");
+		assertThat(response.result()).isSameAs(blocked);
+		assertThat(response.result().get("status").asString()).isEqualTo("PARTIAL_RESULT_BLOCKED");
+		assertThat(response.analysisIds()).containsExactly(12L);
+	}
+
+	@Test
+	void snapshotHotspotIsSentAsLive() {
+		AnalysisSnapshot snapshot = this.store.put(SpatialFixtures.liveResult());
+
+		SpatialAnalysisResponse response = this.service.snapshotHotspot(snapshot.token().toString(), 200);
+
+		assertThat(response.analysisIds()).isEmpty();
+		JsonNode sent = sent(Endpoint.HOTSPOT);
+		assertThat(sent.get("source").get("kind").asString()).isEqualTo("LIVE");
+		assertThat(sent.get("source").get("analysisId").isNull()).isTrue();
+		assertThat(sent.get("cellSizeMeters").asInt()).isEqualTo(200);
+		assertThat(sent.get("complete").asBoolean()).isFalse();
+		assertThat(this.store.find(snapshot.token())).contains(snapshot);
+	}
+
+	@Test
+	void hotspotRejectsAnInvalidCellSizeBeforeAnything() {
+		for (Runnable call : new Runnable[] { () -> this.service.savedHotspot(12, 75),
+				() -> this.service.snapshotHotspot(UUID.randomUUID().toString(), 150) }) {
+			assertThatExceptionOfType(InvalidSpatialRequestException.class).isThrownBy(call::run)
+				.satisfies((ex) -> assertThat(ex.getError()).isEqualTo("INVALID_CELL_SIZE"));
+		}
+		verifyNoInteractions(this.history);
+		verify(this.client, never()).requireAvailable();
+		verify(this.client, never()).post(any(), any());
+	}
+
+	@Test
+	void hotspotKeepsTheAvailabilityAndLookupRules() {
+		given(this.history.get(99)).willThrow(new AnalysisHistoryException(Code.ANALYSIS_NOT_FOUND, "없음"));
+		assertThatExceptionOfType(AnalysisHistoryException.class).isThrownBy(() -> this.service.savedHotspot(99, 100))
+			.satisfies((ex) -> assertThat(ex.getCode()).isEqualTo(Code.ANALYSIS_NOT_FOUND));
+		assertThatExceptionOfType(AnalysisHistoryException.class)
+			.isThrownBy(() -> this.service.snapshotHotspot(UUID.randomUUID().toString(), 100))
+			.satisfies((ex) -> assertThat(ex.getCode()).isEqualTo(Code.SNAPSHOT_EXPIRED));
+		assertThatExceptionOfType(AnalysisHistoryException.class)
+			.isThrownBy(() -> this.service.snapshotHotspot("not-a-token", 100))
+			.satisfies((ex) -> assertThat(ex.getCode()).isEqualTo(Code.INVALID_TOKEN));
+		verify(this.client, never()).post(any(), any());
+
+		willThrow(new AnalysisServiceException(Reason.ANALYSIS_SERVICE_UNAVAILABLE, "x")).given(this.client)
+			.requireAvailable();
+		AnalysisSnapshotStore store = mock(AnalysisSnapshotStore.class);
+		SpatialAnalysisService service = new SpatialAnalysisService(this.history, store,
+				new PythonRequestMapper(this.jsonMapper), this.client);
+		assertThatExceptionOfType(AnalysisServiceException.class).isThrownBy(() -> service.savedHotspot(12, 100));
+		assertThatExceptionOfType(AnalysisServiceException.class)
+			.isThrownBy(() -> service.snapshotHotspot(UUID.randomUUID().toString(), 100));
+		verify(this.history).get(99);
+		verify(this.history, never()).get(12);
+		verifyNoInteractions(store);
 	}
 
 	@Test
