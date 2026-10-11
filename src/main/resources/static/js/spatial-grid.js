@@ -12,6 +12,8 @@
  *   표시 상한(1,345개)을 넘으면 몇 개를 뺐는지 안내한다.
  * - 격자를 켜면 분석 건물 도형만 숨기고(map-analysis-renderer.js setBuildingsVisible) 반경 원과 중심점은 둔다.
  *   끄면 다시 보인다. 3D 건물 레이어는 바꾸지 않는다. 다른 공간 분석 보기로 옮겨도 격자는 그대로 둔다.
+ * - 격자와 핫스팟(spatial-hotspot.js)은 지도에 함께 그리지 않는다. 격자를 켜면 'gis:spatiallayerchange' { layer: 'grid' }를
+ *   먼저 보내 핫스팟을 끄고, 다른 레이어가 켜졌다는 이벤트를 받으면 격자를 끈다(이때는 이벤트를 보내지 않는다).
  * - 측정 초기화('gis:measurereset', vw.Map.clear)로 지워지면 격자를 켠 상태에서만 다시 그린다. map.clear()는 쓰지 않는다.
  * - 셀을 클릭하면 반경 중심점이 바뀌지 않게 막고(gisAnalysis.suppressNextMapClick) 셀 정보를 보여 준다. 거리·면적 측정,
  *   좌표 조회 중에는 셀 클릭을 무시한다. 건물 선택 모드에서 셀을 클릭하면 건물 선택이 풀리는 기존 동작은 그대로다.
@@ -140,7 +142,7 @@
 	 * deps: {
 	 *   api, model(prepareCells), renderer(격자 도형), analysisRenderer() (setBuildingsVisible),
 	 *   analysis() (suppressNextMapClick), mode(), fetchJson(url, signal), base, online(), render(state),
-	 *   refreshStatus(), openGridView()
+	 *   refreshStatus(), openGridView(), dispatchLayer(layer) (gis:spatiallayerchange, 없어도 된다)
 	 * }
 	 * request.phase: idle | loading | done | error | blocked
 	 * drawing.phase: none | drawing | done | cancelled | failed | unsupported
@@ -392,10 +394,23 @@
 				render();
 				return false;
 			}
+			// 다른 지도 레이어(핫스팟)를 먼저 끈다. 그쪽이 건물을 다시 보이게 한 뒤에 격자가 건물을 숨긴다.
+			if (deps.dispatchLayer) {
+				deps.dispatchLayer('grid');
+			}
 			state.display = true;
 			buildings(false);
 			showSize(state.cellSize);
 			return true;
+		}
+
+		/* gis:spatiallayerchange: 핫스팟 레이어가 켜졌으면 격자를 끈다. 이벤트를 다시 보내지 않는다. */
+		function layerChanged(layer) {
+			if (layer !== 'hotspot' || !state.display) {
+				return;
+			}
+			turnOff(false);
+			render();
 		}
 
 		function setCellSize(size) {
@@ -480,6 +495,7 @@
 			setCellSize: setCellSize,
 			setExcludeEmpty: setExcludeEmpty,
 			measureReset: measureReset,
+			layerChanged: layerChanged,
 			pick: pick,
 			retry: retry,
 			getState: function () {
@@ -645,6 +661,9 @@
 				return win.navigator.onLine !== false;
 			},
 			render: render,
+			dispatchLayer: function (layer) {
+				doc.dispatchEvent(new win.CustomEvent('gis:spatiallayerchange', { detail: { layer: layer } }));
+			},
 			refreshStatus: function () {
 				if (win.gisSpatialDashboard && win.gisSpatialDashboard.refreshStatus) {
 					win.gisSpatialDashboard.refreshStatus();
@@ -694,6 +713,9 @@
 		});
 		doc.addEventListener('gis:measurereset', function () {
 			controller.measureReset();
+		});
+		doc.addEventListener('gis:spatiallayerchange', function (event) {
+			controller.layerChanged(event.detail && event.detail.layer);
 		});
 
 		if (analysis && analysis.getCurrent) {

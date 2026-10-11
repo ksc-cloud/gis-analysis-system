@@ -160,8 +160,9 @@ class HomeControllerTests {
 		HttpResponse<String> compare = get("/js/spatial-compare.js");
 		HttpResponse<String> gridRenderer = get("/js/spatial-grid-renderer.js");
 		HttpResponse<String> grid = get("/js/spatial-grid.js");
+		HttpResponse<String> hotspot = get("/js/spatial-hotspot.js");
 
-		for (HttpResponse<String> response : List.of(api, views, dashboard, compare, gridRenderer, grid)) {
+		for (HttpResponse<String> response : List.of(api, views, dashboard, compare, gridRenderer, grid, hotspot)) {
 			assertThat(response.statusCode()).isEqualTo(200);
 			assertThat(response.headers().firstValue("Content-Type")).hasValueSatisfying(
 					(contentType) -> assertThat(contentType).contains("javascript"));
@@ -184,6 +185,12 @@ class HomeControllerTests {
 			.doesNotContain("ws3d");
 		assertThat(grid.body()).contains("gis:measurereset").contains("gis:analysissaved").contains("suppressNextMapClick")
 			.contains("setBuildingsVisible").contains("AbortController");
+		// The hotspot view: its own renderer from the grid model, drawn only with hotspotStyle, one map layer at a time.
+		assertThat(hotspot.body()).contains("gis:spatiallayerchange").contains("gis:measurereset").contains("attachRenderer")
+			.contains("styleFn: deps.model.hotspotStyle").contains("PARTIAL_RESULT_BLOCKED").contains("suppressNextMapClick")
+			.contains("setBuildingsVisible").contains("AbortController").contains("textContent");
+		assertThat(api.body()).contains("/hotspot");
+		assertThat(grid.body()).contains("gis:spatiallayerchange");
 		assertThat(get("/js/map-analysis-renderer.js").body()).contains("setBuildingsVisible");
 		assertThat(get("/js/map-analysis.js").body()).contains("suppressNextMapClick");
 		assertThat(get("/js/map-history.js").body()).contains("gis:analysissaved").contains("gis:historychange")
@@ -191,7 +198,7 @@ class HomeControllerTests {
 		// Without a key the map scripts are not loaded, but the tab markup is still rendered.
 		assertThat(get("/").body()).doesNotContain("spatial-views.js").doesNotContain("spatial-dashboard.js")
 			.doesNotContain("spatial-compare.js")
-			.doesNotContain("spatial-grid.js").doesNotContain("spatial-grid-renderer.js")
+			.doesNotContain("spatial-grid.js").doesNotContain("spatial-grid-renderer.js").doesNotContain("spatial-hotspot.js")
 			.contains("id=\"tab-spatial\"")
 			.contains("id=\"spatial-section\"");
 	}

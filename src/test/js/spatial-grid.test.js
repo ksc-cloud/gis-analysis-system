@@ -77,6 +77,7 @@ function harness(options = {}) {
 	// fake Java API: answers wait for the test
 	const calls = [];
 	const buildingsVisible = [];
+	const order = [];  // setBuildingsVisible and gis:spatiallayerchange calls, in order
 	let suppressed = 0;
 	let mode = options.mode || 'select';
 	let statusRefreshes = 0;
@@ -85,7 +86,7 @@ function harness(options = {}) {
 		api,
 		model,
 		renderer,
-		analysisRenderer: () => ({ setBuildingsVisible: (v) => buildingsVisible.push(v) }),
+		analysisRenderer: () => ({ setBuildingsVisible: (v) => { buildingsVisible.push(v); order.push('buildings:' + v); } }),
 		analysis: () => ({ suppressNextMapClick: () => suppressed++ }),
 		mode: () => mode,
 		fetchJson(url, signal) {
@@ -106,7 +107,8 @@ function harness(options = {}) {
 		online: () => true,
 		render: () => {},
 		refreshStatus: () => statusRefreshes++,
-		openGridView: () => opened++
+		openGridView: () => opened++,
+		dispatchLayer: (layer) => order.push('layer:' + layer)
 	});
 	renderer.setPickHandler(controller.pick);  // what start() does in the browser
 	async function answer(fragment, res) {
@@ -117,7 +119,7 @@ function harness(options = {}) {
 		await flush();
 	}
 	return {
-		controller, renderer, calls, created, removed, frames, drawAll, answer, buildingsVisible,
+		controller, renderer, calls, created, removed, frames, drawAll, answer, buildingsVisible, order,
 		state: () => controller.getState(),
 		suppressed: () => suppressed,
 		opened: () => opened,
@@ -514,4 +516,75 @@ test('the selection is cleared when the grid changes', async () => {
 	assert.notEqual(h.state().selected, null);
 	h.controller.setExcludeEmpty(false);
 	assert.equal(h.state().selected, null);
+});
+
+/* ---------- one map layer at a time (8-7-5a, gis:spatiallayerchange) ---------- */
+
+test('turning the grid on announces the grid layer before hiding the buildings', async () => {
+	const h = harness();
+	h.controller.setService('available');
+	h.controller.setAnalysis(live(1));
+	h.controller.setDisplay(true);
+
+	assert.deepEqual(h.order, ['layer:grid', 'buildings:false']);
+	// Already on: no second announcement.
+	h.controller.setDisplay(true);
+	assert.deepEqual(h.order, ['layer:grid', 'buildings:false']);
+	// Not possible (no analysis, service down): nothing announced.
+	const none = harness();
+	none.controller.setService('available');
+	none.controller.setDisplay(true);
+	const down = harness();
+	down.controller.setService('unavailable');
+	down.controller.setAnalysis(live(1));
+	down.controller.setDisplay(true);
+	assert.deepEqual(none.order, []);
+	assert.deepEqual(down.order, []);
+});
+
+test('the hotspot layer turns the grid off: request aborted, cells removed, buildings back, no new event', async () => {
+	const h = harness();
+	await shown(h);
+	assert.equal(h.renderer.count(), 8);
+	h.order.length = 0;
+
+	h.controller.layerChanged('hotspot');
+	assert.equal(h.state().display, false);
+	assert.equal(h.renderer.count(), 0);
+	assert.ok(h.created.every((obj) => obj.listenerRemoved));
+	assert.deepEqual(h.order, ['buildings:true'], 'buildings shown again, no layer event sent back');
+	// The cache is kept: turning the grid on again draws without a request.
+	const before = h.gridCalls().length;
+	h.controller.setDisplay(true);
+	await h.drawAll();
+	assert.equal(h.gridCalls().length, before);
+	assert.equal(h.renderer.count(), 8);
+
+	// While loading: the request is aborted and its late answer ignored.
+	const loading = harness();
+	loading.controller.setService('available');
+	loading.controller.setAnalysis(live(1));
+	loading.controller.setDisplay(true);
+	loading.controller.layerChanged('hotspot');
+	assert.equal(loading.calls[0].signal.aborted, true);
+	assert.equal(loading.state().display, false);
+	assert.equal(loading.state().request.phase, 'idle');
+});
+
+test('its own layer event, unknown layers and an off grid are ignored', async () => {
+	const h = harness();
+	await shown(h);
+	h.order.length = 0;
+	for (const layer of ['grid', undefined, null, '', 'HOTSPOT', 'other']) {
+		h.controller.layerChanged(layer);
+	}
+	assert.equal(h.state().display, true);
+	assert.equal(h.renderer.count(), 8);
+	const off = harness();
+	off.controller.setService('available');
+	off.controller.setAnalysis(live(1));
+	off.controller.layerChanged('hotspot');
+	assert.deepEqual(off.order, []);
+	assert.equal(off.state().display, false);
+	assert.deepEqual(h.order, []);
 });

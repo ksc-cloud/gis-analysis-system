@@ -1,12 +1,13 @@
 /*
- * GIS 3D 지도 - 공간 분석 탭의 보기 전환 (8-7-0, 통계 / 격자 / 비교)
+ * GIS 3D 지도 - 공간 분석 탭의 보기 전환 (8-7-0, 통계 / 격자 / 핫스팟 / 비교)
  *
  * - 보기마다 패널(id="spatial-view-{name}")과 버튼(id="spatial-view-button-{name}", data-view)이 있다.
  *   페이지에 패널이 있는 보기만 열 수 있고, 알 수 없거나 없는 보기는 통계(stats)로 연다.
  * - 보기를 열면 그 패널만 보이고(hidden) 그 버튼만 눌린 상태(aria-pressed)가 되며, 같은 보기를 다시 열어도
  *   'gis:spatialviewchange' { view }를 보낸다. 시작할 때는 보내지 않는다(처음 화면은 index.jsp의 hidden이 정한다).
  * - 다른 파일은 window.gisSpatialViews.show(name), current()로 보기를 바꾸고 확인한다.
- *   보기의 내용은 spatial-dashboard.js(통계), spatial-grid.js(격자), spatial-compare.js(비교)가 그린다.
+ *   보기의 내용은 spatial-dashboard.js(통계), spatial-grid.js(격자), spatial-hotspot.js(핫스팟),
+ *   spatial-compare.js(비교)가 그린다.
  * - 보기 판정과 전환은 DOM 없이 동작해 node --test로 검사한다.
  */
 (function (factory) {
@@ -20,7 +21,7 @@
 })(function () {
 	'use strict';
 
-	var VIEWS = ['stats', 'grid', 'compare'];
+	var VIEWS = ['stats', 'grid', 'hotspot', 'compare'];
 	var DEFAULT_VIEW = 'stats';
 
 	/* 열 수 있는 보기면 그 이름, 아니면 통계 */

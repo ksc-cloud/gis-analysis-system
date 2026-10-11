@@ -84,7 +84,30 @@ test('resolveView: a view the page has is kept, anything else falls back to stat
 });
 
 test('VIEWS lists the views in the order of the buttons', () => {
-	assert.deepEqual([...views.VIEWS], ['stats', 'grid', 'compare']);
+	assert.deepEqual([...views.VIEWS], ['stats', 'grid', 'hotspot', 'compare']);
+});
+
+test('a page without the hotspot panel (index.jsp before 8-7-5b) starts and keeps the other three views', () => {
+	const p = page(['stats', 'grid', 'compare']);
+	assert.deepEqual(p.events, []);
+	p.window.gisSpatialViews.show('hotspot');
+	assert.equal(p.window.gisSpatialViews.current(), 'stats');
+	['grid', 'compare'].forEach((name) => {
+		p.window.gisSpatialViews.show(name);
+		assert.deepEqual(p.visible(), [name]);
+	});
+	assert.deepEqual(p.events.map((e) => e.view), ['stats', 'grid', 'compare']);
+});
+
+test('with a hotspot panel the hotspot view opens like the others', () => {
+	const p = page(['stats', 'grid', 'hotspot', 'compare']);
+	p.el('spatial-view-button-hotspot').click();
+	assert.equal(p.window.gisSpatialViews.current(), 'hotspot');
+	assert.deepEqual(p.visible(), ['hotspot']);
+	assert.deepEqual(p.pressed(), ['hotspot']);
+	p.window.gisSpatialViews.show('compare');
+	assert.deepEqual(p.visible(), ['compare']);
+	assert.deepEqual(p.events.map((e) => e.view), ['hotspot', 'compare']);
 });
 
 /* ---------- start() ---------- */
@@ -169,7 +192,7 @@ test('index.jsp loads spatial-views.js before the dashboard, compare and grid mo
 	const jsp = fs.readFileSync(JSP, 'utf8');
 	const at = (file) => jsp.indexOf('/js/' + file + '"');
 	assert.ok(at('spatial-views.js') > 0, 'spatial-views.js is loaded');
-	['spatial-dashboard.js', 'spatial-compare.js', 'spatial-grid.js'].forEach((file) => {
+	['spatial-dashboard.js', 'spatial-compare.js', 'spatial-grid.js', 'spatial-hotspot.js'].forEach((file) => {
 		assert.ok(at(file) > 0, file + ' is loaded');
 		assert.ok(at('spatial-views.js') < at(file), 'spatial-views.js before ' + file);
 	});
@@ -183,4 +206,14 @@ test('index.jsp keeps the view buttons and panels the module looks up', () => {
 		assert.match(jsp, new RegExp('aria-controls="spatial-view-' + name + '"'));
 		assert.match(jsp, new RegExp('id="spatial-view-' + name + '"'));
 	});
+	// The buttons appear in the order of VIEWS: stats, grid, hotspot, compare.
+	const positions = views.VIEWS.map((name) => jsp.indexOf('id="spatial-view-button-' + name + '"'));
+	assert.deepEqual([...positions].sort((a, b) => a - b), positions);
+	// Every button has the same accessibility attributes; only the stats panel starts visible.
+	views.VIEWS.forEach((name) => {
+		const button = jsp.slice(positions[views.VIEWS.indexOf(name)], jsp.indexOf('</button>', positions[views.VIEWS.indexOf(name)]));
+		assert.match(button, /aria-pressed="(true|false)"/);
+		assert.match(button, new RegExp('aria-controls="spatial-view-' + name + '"'));
+	});
+	assert.match(jsp, /id="spatial-view-hotspot"[^>]*\bhidden\b/);
 });

@@ -347,7 +347,8 @@
 			</p>
 		</section>
 
-		<%-- 공간 분석: 공간 통계(8-6A, spatial-dashboard.js), 격자 밀집도(8-6B, spatial-grid.js), 저장된 분석 비교(8-6C, spatial-compare.js).
+		<%-- 공간 분석: 공간 통계(8-6A, spatial-dashboard.js), 격자 밀집도(8-6B, spatial-grid.js), 격자 핫스팟(8-7, spatial-hotspot.js),
+			 저장된 분석 비교(8-6C, spatial-compare.js).
 			 보기 전환은 spatial-views.js가 맡는다(id="spatial-view-{name}" 패널과 id="spatial-view-button-{name}" 버튼). --%>
 		<section class="panel-section spatial" id="spatial-section" data-state="empty" role="tabpanel"
 				 aria-labelledby="spatial-title" hidden>
@@ -359,6 +360,8 @@
 						aria-pressed="true" aria-controls="spatial-view-stats">통계</button>
 				<button type="button" class="spatial-views__button" id="spatial-view-button-grid" data-view="grid"
 						aria-pressed="false" aria-controls="spatial-view-grid">격자</button>
+				<button type="button" class="spatial-views__button" id="spatial-view-button-hotspot" data-view="hotspot"
+						aria-pressed="false" aria-controls="spatial-view-hotspot">핫스팟</button>
 				<button type="button" class="spatial-views__button" id="spatial-view-button-compare" data-view="compare"
 						aria-pressed="false" aria-controls="spatial-view-compare">비교</button>
 			</div>
@@ -425,6 +428,55 @@
 				</p>
 			</div>
 
+			<%-- 격자 핫스팟 (spatial-hotspot.js, 지도 도형: spatial-grid-renderer.js의 핫스팟 전용 renderer).
+				 status가 OK일 때만 지도에 그린다. 부분 조회 결과(PARTIAL_RESULT_BLOCKED)와 통계 불가 상태는 사유만 안내한다. --%>
+			<div class="spatial-view hotspot-view" id="spatial-view-hotspot" data-state="empty" aria-busy="false" hidden>
+				<p class="empty-state" id="hotspot-empty">
+					분석 결과가 없습니다.<br>
+					반경 분석을 실행하거나 분석 이력에서 저장된 분석을 열면 격자 핫스팟을 분석할 수 있습니다.
+				</p>
+				<div class="grid-controls">
+					<div class="grid-controls__sizes" role="group" aria-label="핫스팟 셀 크기">
+						<button type="button" class="tool-bar__button" id="hotspot-size-50" data-cell-size="50" aria-pressed="false">50m</button>
+						<button type="button" class="tool-bar__button" id="hotspot-size-100" data-cell-size="100" aria-pressed="true">100m</button>
+						<button type="button" class="tool-bar__button" id="hotspot-size-200" data-cell-size="200" aria-pressed="false">200m</button>
+					</div>
+					<div class="hotspot-actions">
+						<button type="button" class="tool-bar__button tool-bar__button--primary" id="hotspot-run" disabled>핫스팟 분석 실행</button>
+						<button type="button" class="tool-bar__button" id="hotspot-clear" disabled>지도에서 지우기</button>
+					</div>
+				</div>
+				<p class="spatial__status hotspot-status" id="hotspot-status" role="status" aria-live="polite" hidden></p>
+				<button type="button" class="building-status__retry" id="hotspot-retry" hidden>다시 시도</button>
+				<div class="analysis__completeness is-incomplete hotspot-notice" id="hotspot-notice" hidden></div>
+				<div class="hotspot-result" id="hotspot-result" hidden>
+					<p class="grid-summary" id="hotspot-summary"></p>
+					<div class="spatial-kpis" id="hotspot-kpis"></div>
+				</div>
+				<section class="hotspot-moran" id="hotspot-moran" aria-labelledby="hotspot-moran-title" hidden>
+					<h3 class="analysis__subtitle" id="hotspot-moran-title">전역 공간 자기상관 (Moran's I)</h3>
+					<dl class="info-list hotspot-moran__list" id="hotspot-moran-list"></dl>
+					<p class="hotspot-moran__text" id="hotspot-moran-text"></p>
+					<p class="panel-hint" id="hotspot-moran-scope"></p>
+				</section>
+				<ul class="spatial__warnings" id="hotspot-notices" hidden></ul>
+				<div class="grid-detail" id="hotspot-detail" hidden></div>
+				<h3 class="analysis__subtitle">범례 (셀별 Getis-Ord Gi* 분류)</h3>
+				<ul class="grid-legend hotspot-legend" id="hotspot-legend" aria-label="유의 수준 7단계"></ul>
+				<ul class="grid-legend hotspot-legend hotspot-legend--untested" id="hotspot-legend-untested"
+					aria-label="검정하지 않은 셀"></ul>
+				<details class="hotspot-limitations" id="hotspot-limitations" hidden>
+					<summary>분석 방법과 해석의 한계</summary>
+					<p class="panel-hint" id="hotspot-method"></p>
+					<ul class="spatial__warnings" id="hotspot-limitations-list"></ul>
+				</details>
+				<p class="panel-hint" id="hotspot-hint">
+					핫스팟은 주변 셀과 함께 셀 점유율이 통계적으로 높은 군집, 콜드스팟은 유의하게 낮은 군집입니다. 분류는 다중 검정을
+					보정한 q값으로 정했습니다. 핫스팟을 표시하는 동안 분석 건물 도형과 격자 밀집도는 숨깁니다. 셀을 누르면 셀 정보를 볼 수
+					있습니다(거리·면적 측정과 좌표 조회 중에는 제외). 다른 보기로 옮기면 지도에서 지웁니다.
+				</p>
+			</div>
+
 			<%-- 저장된 분석 비교 (spatial-compare.js) --%>
 			<div class="spatial-view compare" id="spatial-view-compare" data-state="empty" hidden>
 				<p class="empty-state" id="compare-empty">
@@ -480,7 +532,7 @@
 	<%-- 공간 분석(공간 통계, 분석 서버 상태): Java의 /api/spatial-analysis, /api/analysis-snapshots, /api/analyses/{id}/statistics만
 		 호출한다. gis:analysisresult와 gis:analysissaved를 놓치지 않도록 map-history.js 다음, vworld-map.js 전에 로드한다. --%>
 	<script src="${pageContext.request.contextPath}/js/spatial-api.js"></script>
-	<%-- 공간 분석 탭의 보기 전환(통계 / 격자 / 비교, window.gisSpatialViews). 각 보기 모듈보다 먼저 로드한다. --%>
+	<%-- 공간 분석 탭의 보기 전환(통계 / 격자 / 핫스팟 / 비교, window.gisSpatialViews). 각 보기 모듈보다 먼저 로드한다. --%>
 	<script src="${pageContext.request.contextPath}/js/spatial-views.js"></script>
 	<script src="${pageContext.request.contextPath}/js/spatial-dashboard.js"
 			data-api-base="${pageContext.request.contextPath}/api"></script>
@@ -491,6 +543,10 @@
 		 GET /api/analysis-snapshots/{token}/grid-density, /api/analyses/{id}/grid-density. vworld-map.js 전에 로드한다. --%>
 	<script src="${pageContext.request.contextPath}/js/spatial-grid-renderer.js"></script>
 	<script src="${pageContext.request.contextPath}/js/spatial-grid.js"
+			data-api-base="${pageContext.request.contextPath}/api"></script>
+	<%-- 격자 핫스팟(8-7): GET /api/analysis-snapshots/{token}/hotspot, /api/analyses/{id}/hotspot. 핫스팟 전용 도형 renderer를
+		 gisGridModel.attachRenderer로 한 번 만든다. 격자 밀집도와는 gis:spatiallayerchange로 동시에 표시하지 않는다. --%>
+	<script src="${pageContext.request.contextPath}/js/spatial-hotspot.js"
 			data-api-base="${pageContext.request.contextPath}/api"></script>
 	<%-- 지도 검색: /api/search 통신, 검색 위치 마커, "이 위치로 반경 분석"(window.gisAnalysis.startAt) --%>
 	<script src="${pageContext.request.contextPath}/js/map-search.js"

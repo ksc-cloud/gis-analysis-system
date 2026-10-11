@@ -22,6 +22,30 @@ test('statistics URLs for snapshots and saved analyses', () => {
 	}
 });
 
+test('hotspot URLs: saved id or snapshot token, cell sizes 50 / 100 / 200 only', () => {
+	const token = '0f8fad5b-d9cb-469f-a165-70867728950e';
+	for (const size of [50, 100, 200]) {
+		assert.equal(api.hotspotUrl({ kind: 'saved', analysisId: 12 }, size), '/api/analyses/12/hotspot?cellSize=' + size);
+		assert.equal(api.hotspotUrl({ kind: 'snapshot', token }, size),
+			'/api/analysis-snapshots/' + token + '/hotspot?cellSize=' + size);
+	}
+	assert.equal(api.hotspotUrl({ kind: 'saved', analysisId: 7 }, 100, '/ctx/api'), '/ctx/api/analyses/7/hotspot?cellSize=100');
+	assert.equal(api.hotspotUrl({ kind: 'snapshot', token: 'a/b?c' }, 100),
+		'/api/analysis-snapshots/a%2Fb%3Fc/hotspot?cellSize=100');
+	for (const size of [0, 25, 75, 150, 300, '100', null, undefined, NaN, 100.5]) {
+		assert.equal(api.hotspotUrl({ kind: 'saved', analysisId: 12 }, size), null, String(size));
+	}
+	for (const invalid of [null, { kind: 'saved', analysisId: null }, { kind: 'saved', analysisId: '1;x' },
+		{ kind: 'saved', analysisId: '1234567890123456789' }, { kind: 'snapshot', token: null },
+		{ kind: 'snapshot', token: '' }, { kind: 'other' }]) {
+		assert.equal(api.hotspotUrl(invalid, 100), null);
+	}
+	// The other URLs are unchanged.
+	assert.equal(api.statisticsUrl({ kind: 'saved', analysisId: 12 }), '/api/analyses/12/statistics');
+	assert.equal(api.gridDensityUrl({ kind: 'saved', analysisId: 12 }, 50),
+		'/api/analyses/12/grid-density?cellSize=50&includeEmptyCells=true&includeBuildingIds=false');
+});
+
 test('every documented error code has its own Korean message', () => {
 	const codes = ['ANALYSIS_SERVICE_NOT_CONFIGURED', 'ANALYSIS_SERVICE_UNAVAILABLE', 'ANALYSIS_SERVICE_BUSY',
 		'ANALYSIS_SERVICE_TIMEOUT', 'ANALYSIS_TOO_LARGE', 'ANALYSIS_DATA_UNSUPPORTED', 'ANALYSIS_SERVICE_ERROR',

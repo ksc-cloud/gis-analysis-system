@@ -285,4 +285,59 @@ class HomeControllerVWorldTests {
 		assertThat(body.substring(gridScript - 120, gridScript + 120)).contains("data-api-base=\"/api\"");
 	}
 
+	@Test
+	void homeRendersTheHotspotViewAndLoadsTheHotspotScriptAfterTheGridAndBeforeTheMap() throws Exception {
+		HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + this.port + "/")).build();
+		String body = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();
+
+		assertThat(body).contains("id=\"spatial-view-button-hotspot\" data-view=\"hotspot\"")
+			.contains("aria-pressed=\"false\" aria-controls=\"spatial-view-hotspot\">핫스팟</button>")
+			.contains("id=\"spatial-view-hotspot\" data-state=\"empty\" aria-busy=\"false\" hidden")
+			.contains("id=\"hotspot-empty\"")
+			.contains("role=\"group\" aria-label=\"핫스팟 셀 크기\"")
+			.contains("id=\"hotspot-size-50\" data-cell-size=\"50\" aria-pressed=\"false\">50m</button>")
+			.contains("id=\"hotspot-size-100\" data-cell-size=\"100\" aria-pressed=\"true\">100m</button>")
+			.contains("id=\"hotspot-size-200\" data-cell-size=\"200\" aria-pressed=\"false\">200m</button>")
+			.contains("id=\"hotspot-run\" disabled>핫스팟 분석 실행</button>")
+			.contains("id=\"hotspot-clear\" disabled>지도에서 지우기</button>")
+			.contains("id=\"hotspot-status\" role=\"status\" aria-live=\"polite\" hidden")
+			.contains("id=\"hotspot-retry\" hidden")
+			.contains("id=\"hotspot-notice\" hidden")
+			.contains("id=\"hotspot-result\" hidden")
+			.contains("id=\"hotspot-moran\" aria-labelledby=\"hotspot-moran-title\" hidden")
+			.contains("id=\"hotspot-detail\" hidden")
+			.contains("id=\"hotspot-legend\"")
+			.contains("id=\"hotspot-legend-untested\"")
+			.contains("id=\"hotspot-limitations\" hidden");
+		// Buttons and panels in the view order: statistics, grid, hotspot, comparison.
+		assertThat(body.indexOf("id=\"spatial-view-button-hotspot\""))
+			.isGreaterThan(body.indexOf("id=\"spatial-view-button-grid\""))
+			.isLessThan(body.indexOf("id=\"spatial-view-button-compare\""));
+		assertThat(body.indexOf("id=\"spatial-view-hotspot\"")).isGreaterThan(body.indexOf("id=\"spatial-view-grid\""))
+			.isLessThan(body.indexOf("id=\"spatial-view-compare\""));
+
+		int vworldLoader = body.indexOf("webglMapInit.js.do");
+		int analysisScript = body.indexOf("/js/map-analysis-renderer.js");
+		int historyScript = body.indexOf("/js/map-history.js");
+		int apiScript = body.indexOf("/js/spatial-api.js");
+		int viewsScript = body.indexOf("/js/spatial-views.js");
+		int dashboardScript = body.indexOf("/js/spatial-dashboard.js");
+		int rendererScript = body.indexOf("/js/spatial-grid-renderer.js");
+		int gridScript = body.indexOf("/js/spatial-grid.js");
+		int hotspotScript = body.indexOf("/js/spatial-hotspot.js");
+		int toolsScript = body.indexOf("/js/map-tools.js");
+		int mapScript = body.indexOf("/js/vworld-map.js");
+		assertThat(hotspotScript).isPositive();
+		assertThat(body.indexOf("/js/spatial-hotspot.js", hotspotScript + 1)).as("loaded once").isEqualTo(-1);
+		// spatial-hotspot.js uses window.gisSpatialApi, gisSpatialViews, gisSpatialDashboard, gisAnalysis(Renderer) and
+		// gisGridModel.attachRenderer, and listens to gis:spatiallayerchange from spatial-grid.js: it comes after all of
+		// them. Its renderer connects on gis:mapready, so it comes before vworld-map.js (map initialization stays last).
+		assertThat(hotspotScript).isGreaterThan(vworldLoader).isGreaterThan(analysisScript).isGreaterThan(historyScript)
+			.isGreaterThan(apiScript).isGreaterThan(viewsScript).isGreaterThan(dashboardScript)
+			.isGreaterThan(rendererScript).isGreaterThan(gridScript);
+		assertThat(toolsScript).isGreaterThan(hotspotScript);
+		assertThat(mapScript).isGreaterThan(hotspotScript).isGreaterThan(toolsScript);
+		assertThat(body.substring(hotspotScript, hotspotScript + 120)).contains("data-api-base=\"/api\"");
+	}
+
 }
