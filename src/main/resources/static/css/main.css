@@ -1503,15 +1503,32 @@ body {
 	overflow-wrap: anywhere;
 }
 
+/*
+ * 이력 항목의 버튼: "지도에서 보기"(주 동작)는 한 줄 전체, 나머지(삭제·비교 선택, 삭제 확인의 삭제·취소)는 다음 줄에 같은
+ * 너비로 둔다. 높이를 고정하지 않아 글자가 버튼 밖으로 나가지 않고, 글자는 보통 한 줄이며 아주 좁을 때만 버튼 안에서
+ * 줄을 바꾼다(버튼이 함께 커진다).
+ */
 .history__actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
+	min-width: 0;
 }
 
 .history__actions .tool-bar__button {
-	flex: 1;
+	flex: 1 1 7em;
+	min-width: 0;
+	height: auto;
+	min-height: 28px;
 	margin-left: 0;
+	padding: 4px 10px;
+	line-height: 1.4;
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+.history__actions .tool-bar__button[data-action="open"] {
+	flex-basis: 100%;
 }
 
 .history__confirm {
@@ -2225,16 +2242,24 @@ body {
 	display: none;
 }
 
+/* 실행·지우기: 높이를 고정하지 않아 좁은 패널에서 글자가 줄을 바꿔도 버튼 안에 머문다. 자리가 모자라면 버튼이 다음 줄로. */
 .hotspot-actions {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 6px;
+	min-width: 0;
 }
 
 .hotspot-actions .tool-bar__button {
 	flex: 1 1 auto;
 	min-width: 0;
+	height: auto;
+	min-height: 28px;
+	margin-left: 0;
+	padding: 4px 10px;
+	line-height: 1.4;
 	white-space: normal;
+	overflow-wrap: anywhere;
 }
 
 .hotspot-status__label {
